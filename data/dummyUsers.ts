@@ -9,6 +9,8 @@ export const dummyUsers: User[] = [
     age: "25",
     email: "juan.perez@example.com",
     profile_picture: require("@/assets/dummyImages/avatars/avatar0.jpg"),
+    followers: 200,
+    followed: 150
   },
   {
     id: 2,
@@ -18,6 +20,8 @@ export const dummyUsers: User[] = [
     age: "22",
     email: "maria.lopez@example.com",
     profile_picture: require("@/assets/dummyImages/avatars/avatar1.jpg"),
+    followers: 200,
+    followed: 150
   },
   {
     id: 3,
@@ -27,6 +31,8 @@ export const dummyUsers: User[] = [
     age: "30",
     email: "carlos.gomez@example.com",
     profile_picture: require("@/assets/dummyImages/avatars/avatar0.jpg"),
+    followers: 200,
+    followed: 150
   },
   {
     id: 4,
@@ -36,6 +42,8 @@ export const dummyUsers: User[] = [
     age: "27",
     email: "lucia.martinez@example.com",
     profile_picture: require("@/assets/dummyImages/avatars/avatar1.jpg"),
+    followers: 200,
+    followed: 150
   },
   {
     id: 5,
@@ -45,5 +53,7 @@ export const dummyUsers: User[] = [
     age: "29",
     email: "pedro.fernandez@example.com",
     profile_picture: require("@/assets/dummyImages/avatars/avatar0.jpg"),
+    followers: 200,
+    followed: 150
   },
 ];

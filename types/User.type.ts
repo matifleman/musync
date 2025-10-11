@@ -6,4 +6,6 @@ export type User = {
   age:             string;
   email:           string;
   profile_picture: string;
+  followers:       number;
+  followed:        number;
 }
