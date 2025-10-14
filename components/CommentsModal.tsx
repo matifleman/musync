@@ -4,11 +4,11 @@ import { dummyUsers } from '@/data/dummyUsers';
 import { Comment as TComment } from '@/types/Comment.type';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { BlurView } from 'expo-blur';
 import React, { useRef, useState } from 'react';
-import { FlatList, StyleSheet, Text, TextInput, View } from 'react-native';
-import Modal from 'react-native-modal';
+import { FlatList, KeyboardAvoidingView, Modal, Platform, StyleSheet, Text, TextInput, View } from 'react-native';
 import { AnimatedPressable } from './AnimatedPressable';
-import Comment from './Comment';
+import Comment from "./Comment";
 
 type Props = {
   isVisible: boolean;
@@ -16,9 +16,8 @@ type Props = {
 };
 
 export default function CommentsModal({isVisible, onClose}: Props) {
-  const [newComment, setNewComment] = useState('');
-  const [comments, setComments] = useState<TComment[]>
-  (dummyComments);
+  const [newComment, setNewComment] = useState<string>('');
+  const [comments, setComments] = useState<TComment[]>(dummyComments)
   const postsList = useRef<FlatList>(null);
 
   const handleAddComment = () => {
@@ -37,68 +36,68 @@ export default function CommentsModal({isVisible, onClose}: Props) {
 
   const scrollPostListToEnd = () => postsList.current?.scrollToEnd({animated: true});
 
-  return (
-    <Modal
-      isVisible={isVisible}
-      onSwipeComplete={onClose}
-      // swipeDirection="down"
-      // animationOut="slideOutDown"
-      style={styles.modal}
-      hasBackdrop={false}
-    >
-      <View style={styles.modalContent}>
-        <View style={styles.modalHeader}>
-          <Text style={styles.modalTitle}>Comentarios</Text>
-          <AnimatedPressable onPress={onClose}>
-            <AntDesign name="close-circle" size={22} color={COLORS.lightBlueX2} />
-          </AnimatedPressable>
-        </View>
-        
-        <FlatList
-          ref={postsList}
-          contentContainerStyle={{}}
-          data={comments}
-          keyExtractor={(item) => item.id.toString()}
-          showsVerticalScrollIndicator={true}
-          renderItem={({ item }) => <Comment comment={item} />}
-          onContentSizeChange={scrollPostListToEnd}
-        />
+  if (!isVisible) return null;
 
-        <View style={styles.inputRow} >
-          <TextInput
-            style={styles.input}
-            placeholder="Escribe un comentario..."
-            placeholderTextColor={COLORS.gray}
-            value={newComment}
-            onChangeText={setNewComment}
-            multiline
-            numberOfLines={1}
-            textAlignVertical='center'
-          />
-          <View style={{flex: 1}}>
-          <AnimatedPressable style={styles.sendButton} onPress={handleAddComment}>
-            <FontAwesome name="send" size={20} color={COLORS.lightBlueX2} />
-          </AnimatedPressable>
+  return ( 
+    <Modal
+      onRequestClose={onClose}
+      animationType='slide'
+      visible={isVisible}
+      transparent
+    >
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{flex: 1}}>
+        <BlurView style={styles.blurredOverlay} intensity={20}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Comments</Text>
+              <AnimatedPressable onPress={onClose}>
+                <AntDesign name="close-circle" size={22} color={COLORS.lightBlueX2} />
+              </AnimatedPressable>
+            </View>
+            <FlatList
+              ref={postsList}
+              data={comments}
+              keyExtractor={(item: TComment) => item.id.toString()}
+              showsVerticalScrollIndicator
+              renderItem={({ item }: {item: TComment}) => <Comment comment={item} />}
+              onContentSizeChange={scrollPostListToEnd}
+              keyboardShouldPersistTaps="handled"
+            />
+            <View style={styles.inputRow}>
+              <TextInput
+                style={styles.input}
+                placeholder="Type a comment..."
+                placeholderTextColor={COLORS.gray}
+                value={newComment}
+                onChangeText={setNewComment}
+                multiline
+                numberOfLines={1}
+              />
+              <View style={{flex: 1}}>
+                <AnimatedPressable style={styles.sendButton} onPress={handleAddComment}>
+                  <FontAwesome name="send" size={20} color={COLORS.lightBlueX2} />
+                </AnimatedPressable>
+              </View>
+            </View>
           </View>
-        </View>
-      </View>
+        </BlurView>
+      </KeyboardAvoidingView>
     </Modal>
   )
 };
 
 const styles = StyleSheet.create({  
-  modal: { 
+  blurredOverlay: {
+    flex: 1,
     justifyContent: 'flex-end',
-    margin: 0,
   },
   
   modalContent: {
-    flex: 1,
     backgroundColor: COLORS.black,
     padding: 16,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
-    maxHeight: '70%'
+    maxHeight: "70%",
   },
   
   modalTitle: {
@@ -111,7 +110,8 @@ const styles = StyleSheet.create({
   inputRow: { 
     flexDirection: 'row', 
     alignItems: 'center', 
-    marginTop: 12 
+    marginTop: 12,
+    marginBottom: 20,
   },
   
   input: {
@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
   },
 
   sendButton: {
-    flex: 1,
     alignItems: "center",
+    justifyContent: "center",
   }
 });

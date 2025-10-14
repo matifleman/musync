@@ -50,7 +50,6 @@ export default function PostFooter({ post }: Props) {
       </Text>
 
       <CommentsModal isVisible={showComments} onClose={hideComments} />
-      
     </View>
   );
 };

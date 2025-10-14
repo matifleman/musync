@@ -27,17 +27,17 @@ export const AnimatedPressable = ({onPress, children, style}: Props) => {
   };
 
   return (
-    <Pressable
-      onPress={onPress}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-      hitSlop={20}
-      style={style}
-    >
-      <Animated.View style={{ opacity: animatedOpacity }}>
-        {children}
-      </Animated.View>
-    </Pressable>
+    <Animated.View style={{ opacity: animatedOpacity }}>
+      <Pressable
+        onTouchEnd={onPress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        hitSlop={20}
+        style={style}
+      >
+          {children}
+      </Pressable>
+    </Animated.View>
   );
 };
 
