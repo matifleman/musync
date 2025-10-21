@@ -46,7 +46,7 @@ export default function CommentsModal({isVisible, onClose}: Props) {
       transparent
     >
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{flex: 1}}>
-        <BlurView style={styles.blurredOverlay} intensity={20}>
+        <BlurView style={styles.blurredOverlay} intensity={20} onTouchEnd={onClose} />
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Comments</Text>
@@ -80,7 +80,7 @@ export default function CommentsModal({isVisible, onClose}: Props) {
               </View>
             </View>
           </View>
-        </BlurView>
+        {/* </BlurView> */}
       </KeyboardAvoidingView>
     </Modal>
   )
@@ -90,6 +90,7 @@ const styles = StyleSheet.create({
   blurredOverlay: {
     flex: 1,
     justifyContent: 'flex-end',
+    // height: "auto"
   },
   
   modalContent: {

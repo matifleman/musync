@@ -1,13 +1,14 @@
 import { AnimatedPressable } from '@/components/AnimatedPressable';
 import { COLORS } from '@/constants/Colors';
 import { FONTS } from '@/constants/Fonts';
+import { useSession } from '@/contexts/AuthContext';
+import { LoginRequest } from '@/types/LoginRequest.type';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -16,6 +17,7 @@ import {
   TextInput,
   View
 } from 'react-native';
+import Toast from 'react-native-toast-message';
 
 export default function SignIn() {
   const [email, setEmail] = useState('');
@@ -23,34 +25,29 @@ export default function SignIn() {
   const [loading, setLoading] = useState(false);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
+  const { signIn } = useSession();
+
   const router = useRouter();
 
   const handleLogin = async () => {
-    router.replace("/(app)");
     if (!email || !password) {
-      Alert.alert('Error', 'Complete all fields');
+      Toast.show({
+        type: "error",
+        text1: "All fields are required",
+      })
       return;
     }
-
-
-    // setLoading(true);
-    // try {
-    //   const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/auth/login`, {
-    //     method: 'POST',
-    //     headers: { 'Content-Type': 'application/json' },
-    //     body: JSON.stringify({ email, password }),
-    //   });
-
-    //   if (!res.ok) throw new Error('Credenciales inválidas');
-    //   const data = await res.json();
-
-    //   // Guardar token, navegar, etc.
-    //   // navigation.navigate('Home');
-    // } catch (err) {
-    //   Alert.alert('Error', (err as Error).message);
-    // } finally {
-    //   setLoading(false);
-    // }
+    setLoading(true);
+    const loginRequest: LoginRequest = {email, password};
+    console.log('login request', loginRequest);
+    try {
+      await signIn(loginRequest)
+      router.replace("/(app)");
+    } catch(err) {
+      throw err;
+    } finally{
+      setLoading(false);
+    }
   };
 
   return (
