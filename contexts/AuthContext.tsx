@@ -6,12 +6,12 @@ import { createContext, use, type PropsWithChildren } from 'react';
 import Toast from "react-native-toast-message";
 
 const AuthContext = createContext<{
-  signIn: (loginRequest: LoginRequest) => void;
+  signIn: (loginRequest: LoginRequest) => Promise<void>;
   signOut: () => void;
   session?: string | null;
   isLoading: boolean;
 }>({
-  signIn: () => null,
+  signIn: async (loginRequest: LoginRequest) => Promise.resolve(),
   signOut: () => null,
   session: null,
   isLoading: false,
@@ -33,7 +33,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
   return (
     <AuthContext
       value={{
-        signIn: async (loginRequest: LoginRequest) => {
+        signIn: async (loginRequest: LoginRequest): Promise<void> => {
           try {
             const authResponse: AuthResponse = await loginMutation.mutateAsync(loginRequest)
             console.log(JSON.stringify(authResponse));
@@ -46,7 +46,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
             console.log(err);
             Toast.show({
               type: 'error',
-              text1: 'Error while signing in',
+              text1: 'Login failed',
               text2: err instanceof Error ? err.message : 'Try again',
             });
           }
