@@ -9,6 +9,9 @@ export function useLoginMutation() {
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(loginRequest)
     });
+
+    if (!response.ok) 
+      throw new Error('Login failed');
     
     const data: AuthResponse = await response.json();
     return data;

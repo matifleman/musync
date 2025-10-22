@@ -2,7 +2,7 @@ import { AnimatedPressable } from '@/components/AnimatedPressable';
 import { COLORS } from '@/constants/Colors';
 import { FONTS } from '@/constants/Fonts';
 import { useSession } from '@/contexts/AuthContext';
-import { loginSchema } from '@/schemas/loginSchema'; // 👈 your Zod schema
+import { loginSchema } from '@/schemas/loginSchema';
 import { LoginRequest } from '@/types/LoginRequest.type';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -28,11 +28,7 @@ export default function SignIn() {
   const { signIn } = useSession();
   const router = useRouter();
 
-  const {
-    control,
-    handleSubmit,
-    formState: { errors }
-  } = useForm<LoginRequest>({
+  const { control, handleSubmit, formState: { errors } } = useForm<LoginRequest>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
       email: '',
@@ -43,7 +39,7 @@ export default function SignIn() {
   const onSubmit = async (loginRequest: LoginRequest) => {
     setLoading(true);
     try {
-      console.log('login request', loginRequest);
+      console.log('[*] Login request', loginRequest);
       await signIn(loginRequest);
       router.replace('/(app)');
     } catch (err) {
@@ -72,7 +68,7 @@ export default function SignIn() {
                 keyboardType="email-address"
                 placeholderTextColor={COLORS.black}
               />
-              {errors.email && <Text style={{ color: 'red' }}>{errors.email.message}</Text>}
+              {errors.email && <Text style={styles.errorText}>{errors.email.message}</Text>}
             </>
           )}
         />
@@ -100,7 +96,7 @@ export default function SignIn() {
                   />
                 </AnimatedPressable>
               </View>
-              {errors.password && <Text style={{ color: 'red' }}>{errors.password.message}</Text>}
+              {errors.password && <Text style={styles.errorText}>{errors.password.message}</Text>}
             </>
           )}
         />
@@ -182,6 +178,10 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 12,
     fontFamily: FONTS.spaceMono,
+  },
+
+  errorText: {
+    color: COLORS.red,
   },
 
 });

@@ -2,22 +2,21 @@ import { AnimatedPressable } from "@/components/AnimatedPressable";
 import Post from "@/components/Post";
 import { COLORS } from "@/constants/Colors";
 import { FONTS } from "@/constants/Fonts";
+import { useSession } from "@/contexts/AuthContext";
 import { dummyPosts } from "@/data/dummyPosts";
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { useRouter } from "expo-router";
 import { FlatList, StyleSheet, Text, View } from "react-native";
 
 export default function Index() {
 
-  const router = useRouter();
+  const { signOut } = useSession();
 
-  // const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   return (
     <View style={{ flex: 1 }}>
       <View style={styles.header}>
         <Text style={styles.appName}>Musync</Text>
         <AnimatedPressable>
-          <MaterialIcons name="logout" size={24} color={COLORS.lightBlueX2} onPress={() => router.replace("/sign-in")} />
+          <MaterialIcons name="logout" size={24} color={COLORS.lightBlueX2} onPress={signOut} />
         </AnimatedPressable>
       </View>
       <FlatList

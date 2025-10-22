@@ -6,4 +6,5 @@ export const COLORS = {
   lightBlueX2: "#00a6fb",
   white: "#f0ebeb",
   gray: "#9CA3AF",
+  red: "#be2727ff"
 } as const;

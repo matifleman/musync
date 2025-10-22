@@ -1,13 +1,18 @@
 import { AnimatedPressable } from '@/components/AnimatedPressable';
 import { COLORS } from '@/constants/Colors';
 import { FONTS } from '@/constants/Fonts';
+import { useSession } from '@/contexts/AuthContext';
+import { registrationSchema } from '@/schemas/registrationSchema';
+import { RegistrationRequest } from '@/types/RegistrationRequest.type';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { zodResolver } from '@hookform/resolvers/zod';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -17,35 +22,32 @@ import {
   View
 } from 'react-native';
 
+
 export default function SignUp() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [isPasswordVisible, setIsPasswordVisible] = useState<boolean>(false);
+
+  const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
+  const { signUp } = useSession();
 
   const router = useRouter();
 
-  const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Complete all fields');
-      return;
+  const { control, handleSubmit, formState: { errors } } = useForm<RegistrationRequest>({
+    resolver: zodResolver(registrationSchema),
+    defaultValues: {
+      email: '',
+      password: ''
     }
+  });
 
+  const onSubmit = async (registrationRequest: RegistrationRequest) => {
     setLoading(true);
     try {
-      const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (!res.ok) throw new Error('Credenciales inválidas');
-      const data = await res.json();
-
-      // Guardar token, navegar, etc.
-      // navigation.navigate('Home');
+      console.log('[*] Registration request', registrationRequest);
+      await signUp(registrationRequest);
+      router.replace('/(app)');
     } catch (err) {
-      Alert.alert('Error', (err as Error).message);
+      console.log(err);
     } finally {
       setLoading(false);
     }
@@ -59,29 +61,141 @@ export default function SignUp() {
           style={styles.logo}
         />
 
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
+        <Controller
+          control={control}
+          name="firstName"
+          render={({ field: { onChange, value } }) => (
+            <>
+              <TextInput
+                style={styles.input}
+                placeholder="First name"
+                value={value}
+                onChangeText={onChange}
+                autoCapitalize="none"
+                placeholderTextColor={COLORS.black}
+              />
+              {errors.firstName && <Text style={styles.errorText}>{errors.firstName.message}</Text>}
+            </>
+          )}
         />
 
-        <View style={styles.passwordContainer}>
-          <TextInput
-            style={styles.passwordInput}
-            placeholder="Password"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry={!isPasswordVisible}
-          />
-          <AnimatedPressable onPress={() => setIsPasswordVisible(!isPasswordVisible)}>
-            <FontAwesome name={isPasswordVisible ? "eye" : "eye-slash"} size={24} color={COLORS.lightBlue} />
-          </AnimatedPressable>
-        </View>
+        <Controller
+          control={control}
+          name="lastName"
+          render={({ field: { onChange, value } }) => (
+            <>
+              <TextInput
+                style={styles.input}
+                placeholder="Last name"
+                value={value}
+                onChangeText={onChange}
+                autoCapitalize="none"
+                placeholderTextColor={COLORS.black}
+              />
+              {errors.lastName && <Text style={styles.errorText}>{errors.lastName.message}</Text>}
+            </>
+          )}
+        />
 
-        <AnimatedPressable style={styles.button} onPress={handleLogin}>
+        <Controller
+          control={control}
+          name="username"
+          render={({ field: { onChange, value } }) => (
+            <>
+              <TextInput
+                style={styles.input}
+                placeholder="Username"
+                value={value}
+                onChangeText={onChange}
+                autoCapitalize="none"
+                placeholderTextColor={COLORS.black}
+              />
+              {errors.username && <Text style={styles.errorText}>{errors.username.message}</Text>}
+            </>
+          )}
+        />
+
+        <Controller
+          control={control}
+          name="bornDate"
+          render={({ field: { onChange, value } }) => (
+            <>
+              <AnimatedPressable
+                style={styles.input}
+                onPress={() => setShowDatePicker(true)} // manejás el estado para mostrar el picker
+              >
+                <Text style={{ color: COLORS.black }}>
+                  {value ? new Date(value).toLocaleDateString() : 'Born date'}
+                </Text>
+              </AnimatedPressable>
+
+              {showDatePicker && (
+                <DateTimePicker
+                  value={value ? new Date(value) : new Date()}
+                  mode="date"
+                  display="default"
+                  maximumDate={new Date()}
+                  onChange={(event, selectedDate) => {
+                    setShowDatePicker(false);
+                    if (selectedDate) onChange(selectedDate.toISOString().split('T')[0]);
+                  }}
+                />
+              )}
+              {errors.bornDate && (
+                <Text style={styles.errorText}>{errors.bornDate.message}</Text>
+              )}
+            </>
+          )}
+        />
+
+        <Controller
+          control={control}
+          name="email"
+          render={({ field: { onChange, value } }) => (
+            <>
+              <TextInput
+                style={styles.input}
+                placeholder="Email"
+                value={value}
+                onChangeText={onChange}
+                autoCapitalize="none"
+                keyboardType="email-address"
+                placeholderTextColor={COLORS.black}
+              />
+              {errors.email && <Text style={styles.errorText}>{errors.email.message}</Text>}
+            </>
+          )}
+        />
+
+        <Controller
+          control={control}
+          name="password"
+          render={({ field: { onChange, value } }) => (
+            <>
+              <View style={styles.passwordContainer}>
+                <TextInput
+                  style={styles.passwordInput}
+                  placeholder="Password"
+                  autoCapitalize='none'
+                  value={value}
+                  onChangeText={onChange}
+                  secureTextEntry={!isPasswordVisible}
+                  placeholderTextColor={COLORS.black}
+                />
+                <AnimatedPressable onPress={() => setIsPasswordVisible(!isPasswordVisible)}>
+                  <FontAwesome
+                    name={isPasswordVisible ? 'eye' : 'eye-slash'}
+                    size={24}
+                    color={COLORS.lightBlue}
+                  />
+                </AnimatedPressable>
+              </View>
+              {errors.password && <Text style={styles.errorText}>{errors.password.message}</Text>}
+            </>
+          )}
+        />
+
+        <AnimatedPressable style={styles.signUpButton} onPress={handleSubmit(onSubmit)}>
           {loading ? (
             <ActivityIndicator color={COLORS.white} />
           ) : (
@@ -109,7 +223,7 @@ const styles = StyleSheet.create({
     width: 150,
     height: 150,
     alignSelf: 'center',
-    marginBottom: 36,
+    marginBottom: 10,
     borderRadius: 10,
   },
 
@@ -117,18 +231,18 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
     borderRadius: 8,
     padding: 12,
-    marginBottom: 15,
+    marginVertical: 8,
     borderWidth: 1,
     borderColor: COLORS.gray,
     fontFamily: FONTS.spaceMono,
   },
 
-  button: {
+  signUpButton: {
     backgroundColor: COLORS.blue,
     padding: 14,
     borderRadius: 8,
     alignItems: 'center',
-    marginBottom: 20,
+    marginVertical: 12,
   },
 
   buttonText: {
@@ -149,7 +263,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     borderColor: COLORS.gray,
-    marginBottom: 15,
+    marginVertical: 8,
     paddingHorizontal: 12,
   },
 
@@ -158,5 +272,10 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontFamily: FONTS.spaceMono,
   },
+
+  errorText: {
+    color: COLORS.red,
+    fontSize: 12,
+  }
 
 });
