@@ -1,6 +1,9 @@
+import PostModal from "@/components/PostModal"
 import Stat from "@/components/Stat"
 import { COLORS } from '@/constants/Colors'
-import React from 'react'
+import { dummyPosts } from '@/data/dummyPosts'
+import { Post as PostType } from '@/types/Post.type'
+import React, { useState } from 'react'
 import {
   Dimensions,
   FlatList,
@@ -12,6 +15,8 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native'
+
+// Importar los posts dummy
 
 const { width } = Dimensions.get('window')
 const AVATAR_SIZE = 110
@@ -43,78 +48,83 @@ const user: User = {
   following: 320,
 }
 
-const gridPhotos: ImageSourcePropType[] = [
-  require("@/assets/dummyImages/avatars/avatar0.jpg"),
-  require("@/assets/dummyImages/avatars/avatar0.jpg"),
-  require("@/assets/dummyImages/avatars/avatar0.jpg"),
-  require("@/assets/dummyImages/avatars/avatar0.jpg"),
-  require("@/assets/dummyImages/avatars/avatar0.jpg"),
-  require("@/assets/dummyImages/avatars/avatar0.jpg"),
-  require("@/assets/dummyImages/avatars/avatar0.jpg"),
-  require("@/assets/dummyImages/avatars/avatar0.jpg"),
-  require("@/assets/dummyImages/avatars/avatar0.jpg"),
-  require("@/assets/dummyImages/avatars/avatar0.jpg"),
-  require("@/assets/dummyImages/avatars/avatar0.jpg"),
-  require("@/assets/dummyImages/avatars/avatar0.jpg"),
-  require("@/assets/dummyImages/avatars/avatar0.jpg"),
-  require("@/assets/dummyImages/avatars/avatar0.jpg"),
-  require("@/assets/dummyImages/avatars/avatar0.jpg"),
-  require("@/assets/dummyImages/avatars/avatar0.jpg"),
-]
-
-// ---------------------------------------------------------------------------------
-
 export default function ProfileScreen() {
+  const [selectedPost, setSelectedPost] = useState<PostType | null>(null)
+  const [isModalVisible, setIsModalVisible] = useState(false)
   const fullName = `${user.first_name} ${user.last_name}`
 
+  const openPost = (post: PostType) => {
+    setSelectedPost(post)
+    setIsModalVisible(true)
+  }
+
+  const closePost = () => {
+    setIsModalVisible(false)
+    setSelectedPost(null)
+  }
+
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.screenContent}>
-      {/* header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>{user.username}</Text>
-      </View>
-
-      {/* top block: avatar + stats */}
-      <View style={styles.topBlock}>
-
-        <View style={styles.avatarWrapper}>
-          <Image source={user.profile_picture} style={styles.avatar} />
+    <>
+      <ScrollView style={styles.screen} contentContainerStyle={styles.screenContent}>
+        {/* header */}
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>{user.username}</Text>
         </View>
 
-        <View style={styles.statsContainer}>
-          <Stat number={user.posts} label='Publicaciones'/>
-          <Stat number={user.followers} label='Seguidores'/>
-          <Stat number={user.following} label='Seguidos'/>
-        </View>
-      </View>
+        {/* top block: avatar + stats */}
+        <View style={styles.topBlock}>
+          <View style={styles.avatarWrapper}>
+            <Image source={user.profile_picture} style={styles.avatar} />
+          </View>
 
-      {/* name, username, bio, buttons */}
-      <View style={styles.infoBlock}>
-        <Text style={styles.name}>{fullName}</Text>
-        <Text style={styles.username}>@{user.username}</Text>
-        {user.bio ? <Text style={styles.bio}>{user.bio}</Text> : null}
-
-        <View style={styles.actionRow}>
-          <TouchableOpacity style={styles.editButton}>
-            <Text style={styles.editButtonText}>Editar perfil</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.moreButton}>
-            <Text style={styles.moreButtonText}>⋯</Text>
-          </TouchableOpacity>
+          <View style={styles.statsContainer}>
+            <Stat number={user.posts} label='Publicaciones'/>
+            <Stat number={user.followers} label='Seguidores'/>
+            <Stat number={user.following} label='Seguidos'/>
+          </View>
         </View>
-      </View>
-      {/* grid of posts */}
-      <FlatList
-        data={gridPhotos}
-        keyExtractor={(_, index) => String(index)}
-        numColumns={GRID_COLUMNS}
-        columnWrapperStyle={{ justifyContent: 'space-between', marginBottom: GRID_SPACING }}
-        renderItem={({ item }) => (
-          <Image source={item} style={styles.gridItem} />
-        )}
-        scrollEnabled={false} // allow the ScrollView to scroll
+
+        {/* name, username, bio, buttons */}
+        <View style={styles.infoBlock}>
+          <Text style={styles.name}>{fullName}</Text>
+          <Text style={styles.username}>@{user.username}</Text>
+          {user.bio ? <Text style={styles.bio}>{user.bio}</Text> : null}
+
+          <View style={styles.actionRow}>
+            <TouchableOpacity style={styles.editButton}>
+              <Text style={styles.editButtonText}>Editar perfil</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.moreButton}>
+              <Text style={styles.moreButtonText}>⋯</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* grid of posts */}
+        <FlatList
+          data={dummyPosts}
+          keyExtractor={(item) => String(item.id)}
+          numColumns={GRID_COLUMNS}
+          columnWrapperStyle={{ justifyContent: 'space-between', marginBottom: GRID_SPACING }}
+          renderItem={({ item }) => (
+            <TouchableOpacity onPress={() => openPost(item)}>
+              <Image 
+                source={typeof item.img === 'string' ? { uri: item.img } : item.img} 
+                style={styles.gridItem} 
+              />
+            </TouchableOpacity>
+          )}
+          scrollEnabled={false}
+        />
+      </ScrollView>
+
+      {/* Modal para mostrar el post completo */}
+      <PostModal 
+        post={selectedPost}
+        visible={isModalVisible}
+        onClose={closePost}
       />
-    </ScrollView>
+    </>
   )
 }
 
@@ -140,15 +150,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: COLORS.white
   },
-  headerButton: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerButtonText: {
-    fontSize: 18,
-  },
   topBlock: {
     flexDirection: 'row',
     padding: 16,
@@ -159,13 +160,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 16,
-  },
-  gradientRing: {
-    width: AVATAR_SIZE + 12,
-    height: AVATAR_SIZE + 12,
-    borderRadius: (AVATAR_SIZE + 12) / 2,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   avatar: {
     width: AVATAR_SIZE,
@@ -228,38 +222,6 @@ const styles = StyleSheet.create({
   moreButtonText: {
     fontSize: 20,
     color: COLORS.white,
-  },
-  highlightsContainer: {
-    paddingVertical: 12,
-    paddingLeft: 16,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#eee',
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#eee',
-  },
-  highlightItem: {
-    width: 80,
-    marginRight: 12,
-    alignItems: 'center',
-  },
-  highlightRing: {
-    width: 64,
-    height: 64,
-    borderRadius: 64 / 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  highlightImage: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    borderWidth: 2,
-    borderColor: '#fff',
-  },
-  highlightLabel: {
-    marginTop: 6,
-    fontSize: 12,
-    color: '#444',
   },
   gridItem: {
     width: GRID_ITEM_SIZE,
