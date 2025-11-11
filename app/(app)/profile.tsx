@@ -1,10 +1,13 @@
 import PostModal from "@/components/PostModal"
 import Stat from "@/components/Stat"
 import { COLORS } from '@/constants/Colors'
+import { useSession } from '@/contexts/AuthContext'
 import { dummyPosts } from '@/data/dummyPosts'
 import { Post as PostType } from '@/types/Post.type'
-import React, { useState } from 'react'
+import { User } from '@/types/User.type'
+import React, { useEffect, useState } from 'react'
 import {
+  ActivityIndicator,
   Dimensions,
   FlatList,
   Image,
@@ -16,42 +19,49 @@ import {
   View,
 } from 'react-native'
 
-// Importar los posts dummy
-
 const { width } = Dimensions.get('window')
 const AVATAR_SIZE = 110
 const GRID_SPACING = 2
 const GRID_COLUMNS = 3
 const GRID_ITEM_SIZE = Math.floor((width - GRID_SPACING * (GRID_COLUMNS - 1)) / GRID_COLUMNS)
 
-type User = {
-  id: number
-  first_name: string
-  last_name: string
-  username: string
-  bio?: string
-  profile_picture: ImageSourcePropType
-  posts: number
-  followers: number
-  following: number
-}
-
-const user: User = {
-  id: 1,
-  first_name: 'Matías',
-  last_name: 'Fleman',
-  username: 'matiasf',
-  bio: 'Developer • Cars lover • Buenos Aires 🇦🇷',
-  profile_picture: require("@/assets/dummyImages/avatars/avatar0.jpg"),
-  posts: 42,
-  followers: 1250,
-  following: 320,
-}
+const DEFAULT_AVATAR = require("@/assets/dummyImages/avatars/avatar0.jpg")
 
 export default function ProfileScreen() {
+  const { session } = useSession()
   const [selectedPost, setSelectedPost] = useState<PostType | null>(null)
   const [isModalVisible, setIsModalVisible] = useState(false)
-  const fullName = `${user.first_name} ${user.last_name}`
+  const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    loadUserData()
+  }, [session])
+
+  const loadUserData = () => {
+    try {
+      setLoading(true)
+      setError(null)
+      
+      if (!session) {
+        setError('No hay sesión activa')
+        return
+      }
+      
+      // Parse el session que contiene toda la info del usuario
+      const sessionObj = JSON.parse(session)
+      const userData = sessionObj.user
+      
+      // Mapear los datos del contexto a tu tipo User
+      setUser(userData)
+    } catch (err) {
+      console.error('Error loading user data:', err)
+      setError('No se pudo cargar la información del perfil')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const openPost = (post: PostType) => {
     setSelectedPost(post)
@@ -63,32 +73,59 @@ export default function ProfileScreen() {
     setSelectedPost(null)
   }
 
+  if (loading) {
+    return (
+      <View style={[styles.screen, styles.centerContent]}>
+        <ActivityIndicator size="large" color={COLORS.white} />
+      </View>
+    )
+  }
+
+  if (error || !user) {
+    return (
+      <View style={[styles.screen, styles.centerContent]}>
+        <Text style={styles.errorText}>{error || 'Error desconocido'}</Text>
+        <TouchableOpacity onPress={loadUserData} style={styles.retryButton}>
+          <Text style={styles.retryButtonText}>Reintentar</Text>
+        </TouchableOpacity>
+      </View>
+    )
+  }
+
+  const fullName = `${user.firstName} ${user.lastName}`
+  const avatarSource: ImageSourcePropType = user.profilePicture 
+    ? { uri: user.profilePicture } 
+    : DEFAULT_AVATAR
+
+  // Usar dummyPosts.length ya que el backend aún no tiene posts
+  const postsCount = dummyPosts.length
+
   return (
     <>
       <ScrollView style={styles.screen} contentContainerStyle={styles.screenContent}>
         {/* header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>{user.username}</Text>
+          <Text style={styles.headerTitle}>{user.userName}</Text>
         </View>
 
         {/* top block: avatar + stats */}
         <View style={styles.topBlock}>
           <View style={styles.avatarWrapper}>
-            <Image source={user.profile_picture} style={styles.avatar} />
+            <Image source={avatarSource} style={styles.avatar} />
           </View>
 
           <View style={styles.statsContainer}>
-            <Stat number={user.posts} label='Publicaciones'/>
-            <Stat number={user.followers} label='Seguidores'/>
-            <Stat number={user.following} label='Seguidos'/>
+            <Stat number={postsCount} label='Publicaciones'/>
+            <Stat number={user.followersCount} label='Seguidores'/>
+            <Stat number={user.followedCount} label='Seguidos'/>
           </View>
         </View>
 
         {/* name, username, bio, buttons */}
         <View style={styles.infoBlock}>
           <Text style={styles.name}>{fullName}</Text>
-          <Text style={styles.username}>@{user.username}</Text>
-          {user.bio ? <Text style={styles.bio}>{user.bio}</Text> : null}
+          <Text style={styles.username}>@{user.userName}</Text>
+          {/* Puedes agregar bio cuando tu backend lo tenga */}
 
           <View style={styles.actionRow}>
             <TouchableOpacity style={styles.editButton}>
@@ -135,6 +172,10 @@ const styles = StyleSheet.create({
   },
   screenContent: {
     paddingBottom: 40,
+  },
+  centerContent: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   header: {
     height: 56,
@@ -228,5 +269,20 @@ const styles = StyleSheet.create({
     height: GRID_ITEM_SIZE,
     marginBottom: GRID_SPACING,
     backgroundColor: '#ddd',
+  },
+  errorText: {
+    color: COLORS.white,
+    fontSize: 16,
+    marginBottom: 16,
+  },
+  retryButton: {
+    backgroundColor: COLORS.white,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 6,
+  },
+  retryButtonText: {
+    color: COLORS.black,
+    fontWeight: '600',
   },
 })

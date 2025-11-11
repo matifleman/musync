@@ -1,11 +1,13 @@
 export type User = {
-  id:              number;
-  first_name:      string;
-  last_name:       string;
-  username:        string;
-  age:             string;
-  email:           string;
-  profile_picture: string;
-  followers:       number;
-  followed:        number;
+  id: number
+  firstName: string
+  lastName: string
+  userName: string 
+  age: number
+  email: string
+  profilePicture: string
+  followersCount: number
+  followedCount: number
+  isFollowed: boolean
 }
+
