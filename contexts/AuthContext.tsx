@@ -12,7 +12,7 @@ const AuthContext = createContext<{
   signIn: (loginRequest: LoginRequest) => Promise<void>;
   signUp: (registrationRequest: RegistrationRequest) => Promise<void>;
   signOut: () => void;
-  session?: string | null;
+  session?: AuthResponse | null;
   isLoading: boolean;
 }>({
   signIn: async (loginRequest: LoginRequest) => Promise.resolve(),
@@ -32,7 +32,7 @@ export function useSession() {
 }
 
 export function SessionProvider({ children }: PropsWithChildren) {
-  const [[isLoading, session], setSession] = useStorageState('session');
+  const [[isLoading, session], setSession] = useStorageState<AuthResponse>('session');
   const loginMutation = useLoginMutation();
   const signUpMutation = useSignUpMutation();
   const router = useRouter();
@@ -44,7 +44,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
           try {
             const authResponse: AuthResponse = await loginMutation.mutateAsync(loginRequest)
             console.log(JSON.stringify(authResponse));
-            setSession(JSON.stringify(authResponse));
+            setSession(authResponse);
             Toast.show({
               type: "success",
               text1: "Login successfull"
@@ -63,7 +63,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
           try{
             const authResponse: AuthResponse = await signUpMutation.mutateAsync(registrationRequest);
             console.log(JSON.stringify(authResponse));
-            setSession(JSON.stringify(authResponse));
+            setSession(authResponse);
             Toast.show({
               type: "success",
               text1: "Registration successfull"

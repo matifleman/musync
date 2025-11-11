@@ -12,10 +12,10 @@ type Props = {
 export default function Comment({comment}: Props) {
   return (
     <View style={styles.commentRow}>
-      <Image source={comment.author.profile_picture} style={styles.avatar} />
+      <Image source={comment.author.profilePicture} style={styles.avatar} />
       <View style={{ flex: 1 }}>
         <Text style={styles.commentUsername}>
-          {comment.author.username}{' '}
+          {comment.author.userName}{' '}
           <Text style={styles.commentText}>
             {comment.content}
           </Text>

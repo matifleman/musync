@@ -4,11 +4,11 @@ import { Post as PostType } from '@/types/Post.type'
 import FontAwesome from '@expo/vector-icons/FontAwesome'
 import React from 'react'
 import {
-    Modal,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    View,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
 } from 'react-native'
 
 type Props = {
@@ -19,6 +19,8 @@ type Props = {
 
 export default function PostModal({ post, visible, onClose }: Props) {
   if (!post) return null
+
+  console.log("PostModal rendering with post:", post);
 
   return (
     <Modal
@@ -35,7 +37,7 @@ export default function PostModal({ post, visible, onClose }: Props) {
           </Pressable>
 
           {/* Post completo */}
-          <ScrollView>
+          <ScrollView contentContainerStyle={{ justifyContent: 'center', flex: 1, }}>
             <Post post={post} />
           </ScrollView>
         </View>
@@ -49,10 +51,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.95)',
     justifyContent: 'center',
+    // alignItems: 'center', 
   },
   modalContent: {
     flex: 1,
     marginTop: 60,
+    // justifyContent: 'center',
   },
   closeButton: {
     position: 'absolute',

@@ -44,7 +44,7 @@ export default function PostFooter({ post }: Props) {
 
       <Text style={styles.caption}>
         <Text style={{ fontWeight: '900' }}>
-          {post.author.username}{' '}
+          {post.author.userName}{' '}
         </Text>  
         {post.caption}
       </Text>
