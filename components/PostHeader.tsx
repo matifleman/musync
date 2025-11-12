@@ -13,12 +13,12 @@ export default function PostHeader({ post }: Props) {
   return (
       <View style={styles.header}>
         <Image
-          source={post.author.profile_picture}
+          source={post.author.profilePicture}
           style={styles.avatar}
         />
         <View>
           <Text style={styles.authorName}>
-            {post.author.first_name} {post.author.last_name}
+            {post.author.firstName} {post.author.lastName}
           </Text>
           <Text style={styles.datetime}>{formatTimestamp(post.createdAt)}</Text>
         </View>

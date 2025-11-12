@@ -4,7 +4,7 @@ export type Post = {
   id:        number;
   author:    User;
   caption:   string;
-  img:       string;
+  image:     string;
   createdAt: string;  
   liked:     boolean;
 }

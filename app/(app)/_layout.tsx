@@ -1,6 +1,7 @@
 import { COLORS } from '@/constants/Colors';
 import Entypo from '@expo/vector-icons/Entypo';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Tabs } from "expo-router";
 
 export default function AppLayout() {
@@ -18,13 +19,16 @@ export default function AppLayout() {
       }}
     >
       <Tabs.Screen name="index" options={{
-        tabBarIcon: ({size, color}) => <Entypo name="home" color={color} size={iconSize} /> 
+        tabBarIcon: ({color}) => <Entypo name="home" color={color} size={iconSize} />,
       }} />
       <Tabs.Screen name="search" options={{
-        tabBarIcon: ({size, color}) => <FontAwesome name="search" color={color} size={iconSize} /> 
+        tabBarIcon: ({color}) => <FontAwesome name="search" color={color} size={iconSize} /> 
+      }} />
+      <Tabs.Screen name="createPost" options={{
+        tabBarIcon: ({color}) => <MaterialIcons name="add-circle" color={color} size={iconSize} /> 
       }} />
       <Tabs.Screen name="profile" options={{
-        tabBarIcon: ({size, color}) => <FontAwesome name="user-circle-o" color={color} size={iconSize} /> 
+        tabBarIcon: ({color}) => <FontAwesome name="user-circle-o" color={color} size={iconSize} /> 
       }} />
     </Tabs>
   )

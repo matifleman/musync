@@ -5,7 +5,9 @@ import { useSession } from '@/contexts/AuthContext'
 import { dummyPosts } from '@/data/dummyPosts'
 import { Post as PostType } from '@/types/Post.type'
 import { User } from '@/types/User.type'
-import React, { useEffect, useState } from 'react'
+import apiFetch from "@/utilities/api"
+import { useFocusEffect } from "expo-router"
+import React, { useCallback, useState } from 'react'
 import {
   ActivityIndicator,
   Dimensions,
@@ -35,9 +37,7 @@ export default function ProfileScreen() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    loadUserData()
-  }, [session])
+  const [posts, setPosts] = useState<PostType[]>([])
 
   const loadUserData = () => {
     try {
@@ -45,15 +45,14 @@ export default function ProfileScreen() {
       setError(null)
       
       if (!session) {
-        setError('No hay sesión activa')
+        setError('No active session')
         return
       }
-      
-      // Parse el session que contiene toda la info del usuario
-      const sessionObj = JSON.parse(session)
-      const userData = sessionObj.user
-      
-      // Mapear los datos del contexto a tu tipo User
+
+      // session is already typed (AuthResponse)
+      const userData = session.user
+
+      // Map the context user to your User type
       setUser(userData)
     } catch (err) {
       console.error('Error loading user data:', err)
@@ -61,6 +60,34 @@ export default function ProfileScreen() {
     } finally {
       setLoading(false)
     }
+  }
+  const loadPosts = async (userId: number) => {
+    const response: Response = await apiFetch(`${process.env.EXPO_PUBLIC_API_URL}/posts/author/${userId}`)
+    if (!response.ok) {
+      console.log('Response not ok:', response);
+      throw new Error('Error fetching posts');
+    }
+    const postsData: PostType[] = await response.json();
+    setPosts(resolveServerImageUrls(postsData));
+  }
+  
+  useFocusEffect(
+    useCallback(() => {
+      loadUserData();
+      if (user?.id) loadPosts(user.id);
+    }, [session, user?.id])
+  )
+
+
+  const resolveServerImageUrls = (posts: PostType[]): PostType[] => {
+    return posts.map((post: PostType) => ({
+      ...post,
+      author: {
+        ...post.author,
+        profilePicture: `${process.env.EXPO_PUBLIC_SERVER_URL}/${post.author.profilePicture}`,
+      },
+      image: `${process.env.EXPO_PUBLIC_SERVER_URL}/${post.image}`
+    }));
   }
 
   const openPost = (post: PostType) => {
@@ -94,7 +121,7 @@ export default function ProfileScreen() {
 
   const fullName = `${user.firstName} ${user.lastName}`
   const avatarSource: ImageSourcePropType = user.profilePicture 
-    ? { uri: user.profilePicture } 
+    ? { uri: `${process.env.EXPO_PUBLIC_SERVER_URL}/${user.profilePicture}` } 
     : DEFAULT_AVATAR
 
   // Usar dummyPosts.length ya que el backend aún no tiene posts
@@ -115,9 +142,9 @@ export default function ProfileScreen() {
           </View>
 
           <View style={styles.statsContainer}>
-            <Stat number={postsCount} label='Publicaciones'/>
-            <Stat number={user.followersCount} label='Seguidores'/>
-            <Stat number={user.followedCount} label='Seguidos'/>
+            <Stat number={postsCount} label='Posts'/>
+            <Stat number={user.followersCount} label='Followers'/>
+            <Stat number={user.followedCount} label='Following'/>
           </View>
         </View>
 
@@ -138,21 +165,23 @@ export default function ProfileScreen() {
         </View>
 
         {/* grid of posts */}
-        <FlatList
-          data={dummyPosts}
-          keyExtractor={(item) => String(item.id)}
-          numColumns={GRID_COLUMNS}
-          columnWrapperStyle={{ justifyContent: 'space-between', marginBottom: GRID_SPACING }}
-          renderItem={({ item }) => (
-            <TouchableOpacity onPress={() => openPost(item)}>
-              <Image 
-                source={typeof item.img === 'string' ? { uri: item.img } : item.img} 
-                style={styles.gridItem} 
-              />
-            </TouchableOpacity>
-          )}
-          scrollEnabled={false}
-        />
+        <View style={{alignItems: "center"}}>
+          <FlatList
+            data={posts}
+            keyExtractor={(item) => String(item.id)}
+            numColumns={GRID_COLUMNS}
+            columnWrapperStyle={{ justifyContent: 'flex-start' }}
+            renderItem={({ item }) => (
+              <TouchableOpacity onPress={() => openPost(item)}>
+                <Image 
+                  source={typeof item.image === 'string' ? { uri: item.image } : item.image} 
+                  style={styles.gridItem} 
+                />
+              </TouchableOpacity>
+            )}
+            scrollEnabled={false}
+          />
+        </View>
       </ScrollView>
 
       {/* Modal para mostrar el post completo */}

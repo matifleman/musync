@@ -1,23 +1,34 @@
 import { AnimatedPressable } from "@/components/AnimatedPressable";
+import ConfirmLogoutModal from '@/components/ConfirmLogoutModal';
 import Post from "@/components/Post";
 import { COLORS } from "@/constants/Colors";
 import { FONTS } from "@/constants/Fonts";
 import { useSession } from "@/contexts/AuthContext";
 import { dummyPosts } from "@/data/dummyPosts";
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { useState } from 'react';
 import { FlatList, StyleSheet, Text, View } from "react-native";
 
 export default function Index() {
 
   const { signOut } = useSession();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   return (
     <View style={{ flex: 1 }}>
       <View style={styles.header}>
         <Text style={styles.appName}>Musync</Text>
         <AnimatedPressable>
-          <MaterialIcons name="logout" size={24} color={COLORS.lightBlueX2} onPress={signOut} />
+          <MaterialIcons name="logout" size={24} color={COLORS.lightBlueX2} onPress={() => setShowLogoutConfirm(true)} />
         </AnimatedPressable>
+        <ConfirmLogoutModal
+          visible={showLogoutConfirm}
+          onCancel={() => setShowLogoutConfirm(false)}
+          onConfirm={() => {
+            setShowLogoutConfirm(false);
+            signOut();
+          }}
+        />
       </View>
       <FlatList
         contentContainerStyle={styles.postsList}

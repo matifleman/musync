@@ -15,7 +15,7 @@ export default function Post({ post }: Props) {
     <View style={styles.card}>
       <PostHeader post={post} />
 
-      <Image source={post.img} style={styles.postImage} />
+      <Image source={post.image} style={styles.postImage} />
 
       <PostFooter post={post} />
     </View>
