@@ -2,8 +2,10 @@ import { COLORS } from '@/constants/Colors';
 import { Post } from '@/types/Post.type';
 import { formatTimestamp } from '@/utilities/dateUtils';
 import { Image } from 'expo-image';
+import { router } from 'expo-router';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { AnimatedPressable } from './AnimatedPressable';
 
 type Props = {
   post: Post;
@@ -11,6 +13,7 @@ type Props = {
 
 export default function PostHeader({ post }: Props) {
   return (
+    <AnimatedPressable onPress={()=>router.push(`/user/${post.author.id}`)}>
       <View style={styles.header}>
         <Image
           source={post.author.profilePicture}
@@ -23,6 +26,7 @@ export default function PostHeader({ post }: Props) {
           <Text style={styles.datetime}>{formatTimestamp(post.createdAt)}</Text>
         </View>
       </View>
+    </AnimatedPressable>
   )
 };
 
