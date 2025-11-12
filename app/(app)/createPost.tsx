@@ -90,7 +90,7 @@ export default function CreatePostScreen() {
     setLoading(true);
     const formData = new FormData();
     // Append AuthorId from session if available (backend expects AuthorId)
-    // session is now a typed AuthResponse | null
+    // session is a typed AuthResponse | null
     const authorId = session?.user?.id ?? 0;
     formData.append("AuthorId", String(authorId));
 

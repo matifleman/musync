@@ -4,6 +4,7 @@ import { useStorageState } from "@/hooks/useStorageState";
 import { AuthResponse } from "@/types/AuthResponse.type";
 import { LoginRequest } from "@/types/LoginRequest.type";
 import { RegistrationRequest } from "@/types/RegistrationRequest.type";
+import { User } from "@/types/User.type";
 import { useRouter } from "expo-router";
 import { createContext, use, type PropsWithChildren } from 'react';
 import Toast from "react-native-toast-message";
@@ -12,12 +13,14 @@ const AuthContext = createContext<{
   signIn: (loginRequest: LoginRequest) => Promise<void>;
   signUp: (registrationRequest: RegistrationRequest) => Promise<void>;
   signOut: () => void;
+  setUser: (user: User) => void;
   session?: AuthResponse | null;
   isLoading: boolean;
 }>({
   signIn: async (loginRequest: LoginRequest) => Promise.resolve(),
   signUp: async (registrationRequest: RegistrationRequest) => Promise.resolve(),
   signOut: () => null,
+  setUser: (user: User) => Promise<void>,
   session: null,
   isLoading: false,
 });
@@ -81,6 +84,12 @@ export function SessionProvider({ children }: PropsWithChildren) {
         signOut: () => {
           setSession(null);
           router.replace("/sign-in");
+        },
+        setUser: (user: User) => {
+          if (!session?.accessToken || !session?.refreshToken) return;
+          
+          const updatedSession: AuthResponse = {...session, user};
+          setSession(updatedSession);
         },
         session,
         isLoading,

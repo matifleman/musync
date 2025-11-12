@@ -1,25 +1,28 @@
+import { AnimatedPressable } from "@/components/AnimatedPressable"
 import PostModal from "@/components/PostModal"
 import Stat from "@/components/Stat"
 import { COLORS } from '@/constants/Colors'
 import { useSession } from '@/contexts/AuthContext'
-import { dummyPosts } from '@/data/dummyPosts'
 import { Post as PostType } from '@/types/Post.type'
 import { User } from '@/types/User.type'
-import apiFetch from "@/utilities/api"
-import { useFocusEffect } from "expo-router"
+import { apiFetch } from "@/utilities/api"
+import { resolveServerImageUrls, resolveUserProfilePictureUrl } from "@/utilities/resolverServerImageUrls"
+import Entypo from "@expo/vector-icons/Entypo"
+import * as ImagePicker from 'expo-image-picker'
+import { router, useFocusEffect } from "expo-router"
 import React, { useCallback, useState } from 'react'
 import {
   ActivityIndicator,
   Dimensions,
   FlatList,
   Image,
-  ImageSourcePropType,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native'
+
 
 const { width } = Dimensions.get('window')
 const AVATAR_SIZE = 110
@@ -30,7 +33,7 @@ const GRID_ITEM_SIZE = Math.floor((width - GRID_SPACING * (GRID_COLUMNS - 1)) / 
 const DEFAULT_AVATAR = require("@/assets/dummyImages/avatars/avatar0.jpg")
 
 export default function ProfileScreen() {
-  const { session } = useSession()
+  const { session, setUser: setContextUser } = useSession()
   const [selectedPost, setSelectedPost] = useState<PostType | null>(null)
   const [isModalVisible, setIsModalVisible] = useState(false)
   const [user, setUser] = useState<User | null>(null)
@@ -53,7 +56,7 @@ export default function ProfileScreen() {
       const userData = session.user
 
       // Map the context user to your User type
-      setUser(userData)
+      setUser(resolveUserProfilePictureUrl(userData))
     } catch (err) {
       console.error('Error loading user data:', err)
       setError('No se pudo cargar la información del perfil')
@@ -71,24 +74,47 @@ export default function ProfileScreen() {
     setPosts(resolveServerImageUrls(postsData));
   }
   
+  const handleUpdateAvatar = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+
+    if (!result.canceled && result.assets.length > 0) {
+      const image = result.assets[0];
+
+      const formData = new FormData();
+      formData.append("newAvatar", {
+        uri: image.uri,
+        name: "avatar.jpg",
+        type: "image/jpeg",
+      } as any);
+
+      try {
+        const res = await apiFetch(`${process.env.EXPO_PUBLIC_API_URL}/users/me/avatar`, {
+          method: "PUT",
+          body: formData,
+        });
+
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const updatedUser = resolveUserProfilePictureUrl(await res.json());
+        console.log(updatedUser);
+        setContextUser(updatedUser);
+        setUser(updatedUser);
+      } catch (err) {
+        console.error("Error uploading avatar", err);
+      }
+    }
+  }
+  
   useFocusEffect(
     useCallback(() => {
       loadUserData();
       if (user?.id) loadPosts(user.id);
     }, [session, user?.id])
   )
-
-
-  const resolveServerImageUrls = (posts: PostType[]): PostType[] => {
-    return posts.map((post: PostType) => ({
-      ...post,
-      author: {
-        ...post.author,
-        profilePicture: `${process.env.EXPO_PUBLIC_SERVER_URL}/${post.author.profilePicture}`,
-      },
-      image: `${process.env.EXPO_PUBLIC_SERVER_URL}/${post.image}`
-    }));
-  }
 
   const openPost = (post: PostType) => {
     setSelectedPost(post)
@@ -120,12 +146,7 @@ export default function ProfileScreen() {
   }
 
   const fullName = `${user.firstName} ${user.lastName}`
-  const avatarSource: ImageSourcePropType = user.profilePicture 
-    ? { uri: `${process.env.EXPO_PUBLIC_SERVER_URL}/${user.profilePicture}` } 
-    : DEFAULT_AVATAR
-
-  // Usar dummyPosts.length ya que el backend aún no tiene posts
-  const postsCount = dummyPosts.length
+  const postsCount = posts.length
 
   return (
     <>
@@ -137,9 +158,9 @@ export default function ProfileScreen() {
 
         {/* top block: avatar + stats */}
         <View style={styles.topBlock}>
-          <View style={styles.avatarWrapper}>
-            <Image source={avatarSource} style={styles.avatar} />
-          </View>
+          <TouchableOpacity onPress={handleUpdateAvatar} style={styles.avatarWrapper}>
+            <Image source={{uri: user.profilePicture}} style={styles.avatar} />
+          </TouchableOpacity>
 
           <View style={styles.statsContainer}>
             <Stat number={postsCount} label='Posts'/>
@@ -164,13 +185,28 @@ export default function ProfileScreen() {
           </View>
         </View>
 
+        {
+          postsCount === 0 && (
+            <View style={[styles.centerContent, {marginTop: 40}]}>
+              <Text style={{color: COLORS.white, fontSize: 20}}>You haven&apos;t posted anything yet.</Text>
+              <AnimatedPressable style={{flexDirection: "row", marginTop: 20, alignItems: "center"}} onPress={() => router.navigate("/(app)/createPost")}>
+                <Text style={{color: COLORS.lightBlueX2, fontSize: 18}}>
+                  Create your first post!
+                </Text>
+                <Entypo style={{marginLeft: 6}} name="chevron-with-circle-right" size={24} color={COLORS.lightBlueX2} />
+              </AnimatedPressable>
+            </View>
+          )
+        }
+
         {/* grid of posts */}
-        <View style={{alignItems: "center"}}>
+        <View style={{paddingHorizontal: 0}}>
           <FlatList
             data={posts}
             keyExtractor={(item) => String(item.id)}
             numColumns={GRID_COLUMNS}
-            columnWrapperStyle={{ justifyContent: 'flex-start' }}
+            columnWrapperStyle={{ gap: GRID_SPACING }}
+            contentContainerStyle={{ alignItems: 'flex-start' }}
             renderItem={({ item }) => (
               <TouchableOpacity onPress={() => openPost(item)}>
                 <Image 

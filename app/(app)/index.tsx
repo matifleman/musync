@@ -1,18 +1,49 @@
 import { AnimatedPressable } from "@/components/AnimatedPressable";
 import ConfirmLogoutModal from '@/components/ConfirmLogoutModal';
+import Loading from '@/components/Loading';
 import Post from "@/components/Post";
 import { COLORS } from "@/constants/Colors";
 import { FONTS } from "@/constants/Fonts";
 import { useSession } from "@/contexts/AuthContext";
-import { dummyPosts } from "@/data/dummyPosts";
+import { Post as PostType } from "@/types/Post.type";
+import { apiFetch } from '@/utilities/api';
+import { resolveServerImageUrls } from "@/utilities/resolverServerImageUrls";
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { useState } from 'react';
+import { useFocusEffect } from "expo-router";
+import { useCallback, useState } from 'react';
 import { FlatList, StyleSheet, Text, View } from "react-native";
 
 export default function Index() {
 
   const { signOut } = useSession();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [posts, setPosts] = useState<PostType[]>([]);
+  const [loadingPosts, setLoadingPosts] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
+  async function loadPosts() {
+    setLoadingPosts(true);
+    setFetchError(null);
+    try {
+      const res = await apiFetch(`${process.env.EXPO_PUBLIC_API_URL}/posts`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const posts: PostType[] = await res.json();
+      setPosts(resolveServerImageUrls(posts));
+    } catch (err) {
+      console.error('Failed loading posts', err);
+      setFetchError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setTimeout(() => {
+        setLoadingPosts(false);
+      }, 500);
+    }
+  }
+
+  useFocusEffect(
+    useCallback(() => {
+      loadPosts();
+    }, [])
+  );
 
   return (
     <View style={{ flex: 1 }}>
@@ -30,16 +61,22 @@ export default function Index() {
           }}
         />
       </View>
-      <FlatList
-        contentContainerStyle={styles.postsList}
-        data={dummyPosts}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => <Post post={item} />}
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={
-          <Text style={styles.noPostsText}>Start following people to watch posts 🫂</Text>
-        }
-      />
+      {loadingPosts ? (
+        <Loading message="Loading posts..." />
+      ) : (
+        <FlatList
+          contentContainerStyle={styles.postsList}
+          data={posts}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={({ item }) => <Post post={item} />}
+          showsVerticalScrollIndicator={false}
+          refreshing={loadingPosts}
+          onRefresh={loadPosts}
+          ListEmptyComponent={
+            <Text style={styles.noPostsText}>{fetchError ? `Failed to load posts: ${fetchError}` : 'Start following people to watch posts 🫂'}</Text>
+          }
+        />
+      )}
     </View>
   );
 }

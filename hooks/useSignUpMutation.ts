@@ -10,8 +10,16 @@ export function useSignUpMutation() {
       body: JSON.stringify(registrationRequest)
     });
     
-    if (!response.ok) 
-      throw new Error('Registration failed');
+    if (!response.ok) {
+      const errorBody = await response.json();
+      console.log('Registration error:', errorBody);
+      const firstError =
+        errorBody.errors && typeof errorBody.errors === "object"
+          ? Object.values(errorBody.errors).flat()[0]
+          : errorBody.title || "Something went wrong";
+
+      throw new Error(firstError);
+    }
     
     const data: AuthResponse = await response.json();
     return data;
