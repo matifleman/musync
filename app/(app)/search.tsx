@@ -1,5 +1,10 @@
-import React, { useState } from 'react'
+import { COLORS } from '@/constants/Colors'
+import { useSession } from '@/contexts/AuthContext'
+import { searchService } from '@/services/searchService'
+import { UserSearchResult } from '@/types/User.type'
+import React, { useEffect, useState } from 'react'
 import {
+  ActivityIndicator,
   FlatList,
   Image,
   StyleSheet,
@@ -8,52 +13,124 @@ import {
   TouchableOpacity,
   View
 } from 'react-native'
+import Toast from 'react-native-toast-message'
 
-// Datos de ejemplo - luego reemplazar con llamadas a tu API
-const USUARIOS_EJEMPLO = [
-  { id: 1, username: 'juan_perez', nombre: 'Juan Pérez', foto: '@/assets/dummyImages/avatars/avatar0.jpg', siguiendo: false },
-  { id: 2, username: 'maria_gomez', nombre: 'María Gómez', foto: '@/assets/dummyImages/avatars/avatar0.jpg', siguiendo: true },
-  { id: 3, username: 'carlos_rodriguez', nombre: 'Carlos Rodríguez', foto: '@/assets/dummyImages/avatars/avatar0.jpg', siguiendo: false },
-  { id: 4, username: 'ana_martinez', nombre: 'Ana Martínez', foto: '@/assets/dummyImages/avatars/avatar0.jpg', siguiendo: false },
-  { id: 5, username: 'pedro_sanchez', nombre: 'Pedro Sánchez', foto: '@/assets/dummyImages/avatars/avatar0.jpg', siguiendo: true },
-]
+const DEFAULT_AVATAR = require('@/assets/dummyImages/avatars/avatar0.jpg')
 
 export default function Search() {
+  const { session } = useSession()
   const [busqueda, setBusqueda] = useState('')
-  const [usuarios, setUsuarios] = useState(USUARIOS_EJEMPLO)
+  const [usuarios, setUsuarios] = useState<UserSearchResult[]>([])
+  const [loading, setLoading] = useState(false)
+  const [followingInProgress, setFollowingInProgress] = useState<number | null>(null)
 
-  const usuariosFiltrados = usuarios.filter(usuario => 
-    usuario.username.toLowerCase().includes(busqueda.toLowerCase()) ||
-    usuario.nombre.toLowerCase().includes(busqueda.toLowerCase())
-  )
+  // Buscar usuarios cuando cambia el texto de búsqueda
+  useEffect(() => {
+    const delayDebounce = setTimeout(() => {
+      if (busqueda.trim().length > 0) {
+        buscarUsuarios()
+      } else {
+        setUsuarios([])
+      }
+    }, 300) // Espera 300ms después de que el usuario deje de escribir
 
-  const toggleSeguir = (id: number) => {
-    setUsuarios(usuarios.map(usuario => 
-      usuario.id === id 
-        ? { ...usuario, siguiendo: !usuario.siguiendo }
-        : usuario
-    ))
+    return () => clearTimeout(delayDebounce)
+  }, [busqueda])
+
+  const buscarUsuarios = async () => {
+    try {
+      setLoading(true)
+      const resultados = await searchService.searchUsers(busqueda, session)
+      setUsuarios(resultados)
+    } catch (error) {
+      console.error('Error buscando usuarios:', error)
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'No se pudo realizar la búsqueda',
+      })
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const renderUsuario = ({ item }: { item: typeof USUARIOS_EJEMPLO[0] }) => (
-    <TouchableOpacity style={styles.usuarioItem}>
-      <Image source={{ uri: item.foto }} style={styles.fotoPerfil} />
-      
-      <View style={styles.infoUsuario}>
-        <Text style={styles.username}>{item.username}</Text>
-        <Text style={styles.nombre}>{item.nombre}</Text>
-      </View>
+  const toggleSeguir = async (usuario: UserSearchResult) => {
+    if (!session) {
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Debes iniciar sesión para seguir usuarios',
+      })
+      return
+    }
 
-      <TouchableOpacity 
-        style={[styles.botonSeguir, item.siguiendo && styles.botonSiguiendo]}
-        onPress={() => toggleSeguir(item.id)}
-      >
-        <Text style={[styles.textoBoton, item.siguiendo && styles.textoSiguiendo]}>
-          {item.siguiendo ? 'Siguiendo' : 'Seguir'}
-        </Text>
+    try {
+      setFollowingInProgress(usuario.id)
+
+      if (usuario.siguiendo) {
+        await searchService.unfollowUser(usuario.id, session)
+        Toast.show({
+          type: 'success',
+          text1: 'Dejaste de seguir',
+          text2: `@${usuario.username}`,
+        })
+      } else {
+        await searchService.followUser(usuario.id, session)
+        Toast.show({
+          type: 'success',
+          text1: 'Siguiendo',
+          text2: `@${usuario.username}`,
+        })
+      }
+
+      // Actualizar el estado local
+      setUsuarios(usuarios.map(u =>
+        u.id === usuario.id
+          ? { ...u, siguiendo: !u.siguiendo }
+          : u
+      ))
+    } catch (error) {
+      console.error('Error al seguir/dejar de seguir:', error)
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'No se pudo completar la acción',
+      })
+    } finally {
+      setFollowingInProgress(null)
+    }
+  }
+
+  const renderUsuario = ({ item }: { item: UserSearchResult }) => {
+    const isProcessing = followingInProgress === item.id
+    const avatarSource = item.foto ? { uri: item.foto } : DEFAULT_AVATAR
+
+    return (
+      <TouchableOpacity style={styles.usuarioItem}>
+        <Image source={avatarSource} style={styles.fotoPerfil} />
+
+        <View style={styles.infoUsuario}>
+          <Text style={styles.username}>{item.username}</Text>
+          <Text style={styles.nombre}>{item.nombre}</Text>
+          <Text style={styles.followers}>{item.followersCount} seguidores</Text>
+        </View>
+
+        <TouchableOpacity
+          style={[styles.botonSeguir, item.siguiendo && styles.botonSiguiendo]}
+          onPress={() => toggleSeguir(item)}
+          disabled={isProcessing}
+        >
+          {isProcessing ? (
+            <ActivityIndicator size="small" color={COLORS.white} />
+          ) : (
+            <Text style={[styles.textoBoton, item.siguiendo && styles.textoSiguiendo]}>
+              {item.siguiendo ? 'Siguiendo' : 'Seguir'}
+            </Text>
+          )}
+        </TouchableOpacity>
       </TouchableOpacity>
-    </TouchableOpacity>
-  )
+    )
+  }
 
   return (
     <View style={styles.container}>
@@ -69,27 +146,29 @@ export default function Search() {
         />
       </View>
 
-      <FlatList
-        data={usuariosFiltrados}
-        renderItem={renderUsuario}
-        keyExtractor={(item) => item.id.toString()}
-        contentContainerStyle={styles.listaContainer}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>
-              {busqueda ? 'No se encontraron usuarios' : 'Busca usuarios para seguir'}
-            </Text>
-          </View>
-        }
-      />
+      {loading && busqueda.trim().length > 0 ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={COLORS.white} />
+        </View>
+      ) : (
+        <FlatList
+          data={usuarios}
+          renderItem={renderUsuario}
+          keyExtractor={(item) => item.id.toString()}
+          contentContainerStyle={styles.listaContainer}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>
+                {busqueda.trim().length > 0
+                  ? 'No se encontraron usuarios'
+                  : 'Busca usuarios para seguir'}
+              </Text>
+            </View>
+          }
+        />
+      )}
     </View>
   )
-}
-
-const COLORS = {
-  black: '#000',
-  white: '#fff',
-  gray: '#888',
 }
 
 const styles = StyleSheet.create({
@@ -108,6 +187,11 @@ const styles = StyleSheet.create({
     padding: 12,
     fontSize: 16,
     color: COLORS.white,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   listaContainer: {
     padding: 12,
@@ -140,11 +224,18 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: COLORS.gray,
   },
+  followers: {
+    fontSize: 12,
+    color: COLORS.gray,
+    marginTop: 2,
+  },
   botonSeguir: {
     backgroundColor: '#0095f6',
     paddingHorizontal: 24,
     paddingVertical: 8,
     borderRadius: 6,
+    minWidth: 100,
+    alignItems: 'center',
   },
   botonSiguiendo: {
     backgroundColor: 'transparent',
