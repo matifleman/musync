@@ -2,7 +2,8 @@ import { COLORS } from '@/constants/Colors'
 import { useSession } from '@/contexts/AuthContext'
 import { searchService } from '@/services/searchService'
 import { UserSearchResult } from '@/types/User.type'
-import React, { useEffect, useState } from 'react'
+import { router, useFocusEffect } from 'expo-router'
+import React, { useCallback, useEffect, useState } from 'react'
 import {
   ActivityIndicator,
   FlatList,
@@ -101,18 +102,29 @@ export default function Search() {
     }
   }
 
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        setBusqueda('');
+        setUsuarios([]);
+        setLoading(false);
+        setFollowingInProgress(null);
+      };
+    }, [])
+  );
+
   const renderUsuario = ({ item }: { item: UserSearchResult }) => {
     const isProcessing = followingInProgress === item.id
     const avatarSource = item.foto ? { uri: item.foto } : DEFAULT_AVATAR
 
     return (
-      <TouchableOpacity style={styles.usuarioItem}>
+      <TouchableOpacity style={styles.usuarioItem} onPress={()=>router.push(`/user/${item.id}`)}>
         <Image source={avatarSource} style={styles.fotoPerfil} />
 
         <View style={styles.infoUsuario}>
           <Text style={styles.username}>{item.username}</Text>
           <Text style={styles.nombre}>{item.nombre}</Text>
-          <Text style={styles.followers}>{item.followersCount} seguidores</Text>
+          <Text style={styles.followers}>{item.followersCount} followers</Text>
         </View>
 
         <TouchableOpacity
@@ -124,7 +136,7 @@ export default function Search() {
             <ActivityIndicator size="small" color={COLORS.white} />
           ) : (
             <Text style={[styles.textoBoton, item.siguiendo && styles.textoSiguiendo]}>
-              {item.siguiendo ? 'Siguiendo' : 'Seguir'}
+              {item.siguiendo ? 'Following' : 'Follow'}
             </Text>
           )}
         </TouchableOpacity>
@@ -137,7 +149,7 @@ export default function Search() {
       <View style={styles.searchContainer}>
         <TextInput
           style={styles.searchInput}
-          placeholder="Buscar usuarios..."
+          placeholder="Search users..."
           placeholderTextColor={COLORS.gray}
           value={busqueda}
           onChangeText={setBusqueda}
@@ -160,8 +172,8 @@ export default function Search() {
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyText}>
                 {busqueda.trim().length > 0
-                  ? 'No se encontraron usuarios'
-                  : 'Busca usuarios para seguir'}
+                  ? 'We haven\'t found any users'
+                  : 'Search users to follow'}
               </Text>
             </View>
           }

@@ -39,7 +39,7 @@ export function mapUserSearchDTOToSearchResult(dto: UserSearchDTO): UserSearchRe
     id: dto.id,
     username: dto.userName,
     nombre: `${dto.firstName} ${dto.lastName}`,
-    foto: dto.profilePicture,
+    foto: `${process.env.EXPO_PUBLIC_SERVER_URL}/${dto.profilePicture}`,
     followersCount: dto.followersCount,
     siguiendo: dto.isFollowed,
   }

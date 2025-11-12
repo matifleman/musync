@@ -175,7 +175,7 @@ export default function ProfileScreen() {
 
           <View style={styles.actionRow}>
             <TouchableOpacity style={styles.editButton}>
-              <Text style={styles.editButtonText}>Editar perfil</Text>
+              <Text style={styles.editButtonText}>Edit profile</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.moreButton}>
               <Text style={styles.moreButtonText}>⋯</Text>
@@ -300,6 +300,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginTop: 12,
     paddingHorizontal: 2,
+    height: 40
   },
   editButton: {
     flex: 1,

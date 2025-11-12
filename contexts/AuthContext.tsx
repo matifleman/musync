@@ -6,7 +6,7 @@ import { LoginRequest } from "@/types/LoginRequest.type";
 import { RegistrationRequest } from "@/types/RegistrationRequest.type";
 import { User } from "@/types/User.type";
 import { useRouter } from "expo-router";
-import { createContext, use, type PropsWithChildren } from 'react';
+import { createContext, use, useEffect, useState, type PropsWithChildren } from 'react';
 import Toast from "react-native-toast-message";
 
 const AuthContext = createContext<{
@@ -14,8 +14,9 @@ const AuthContext = createContext<{
   signUp: (registrationRequest: RegistrationRequest) => Promise<void>;
   signOut: () => void;
   setUser: (user: User) => void;
-  session?: AuthResponse | null;
+  session: AuthResponse | null;
   isLoading: boolean;
+  currentUser: User | null,
 }>({
   signIn: async (loginRequest: LoginRequest) => Promise.resolve(),
   signUp: async (registrationRequest: RegistrationRequest) => Promise.resolve(),
@@ -23,6 +24,7 @@ const AuthContext = createContext<{
   setUser: (user: User) => Promise<void>,
   session: null,
   isLoading: false,
+  currentUser: null,
 });
 
 export function useSession() {
@@ -39,6 +41,16 @@ export function SessionProvider({ children }: PropsWithChildren) {
   const loginMutation = useLoginMutation();
   const signUpMutation = useSignUpMutation();
   const router = useRouter();
+
+  const [currentUser, setUserState] = useState<User | null>(session?.user ?? null);
+
+  useEffect(() => {
+    if (session?.user) {
+      setUserState(session.user);
+    } else {
+      setUserState(null);
+    }
+  }, [session]);
 
   return (
     <AuthContext
@@ -93,6 +105,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
         },
         session,
         isLoading,
+        currentUser
       }}>
       {children}
     </AuthContext>
