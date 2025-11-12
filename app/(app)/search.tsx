@@ -40,7 +40,7 @@ export default function Search() {
   const buscarUsuarios = async () => {
     try {
       setLoading(true)
-      const resultados = await searchService.searchUsers(busqueda, session)
+      const resultados = await searchService.searchUsers(busqueda)
       setUsuarios(resultados)
     } catch (error) {
       console.error('Error buscando usuarios:', error)
@@ -68,14 +68,14 @@ export default function Search() {
       setFollowingInProgress(usuario.id)
 
       if (usuario.siguiendo) {
-        await searchService.unfollowUser(usuario.id, session)
+        await searchService.unfollowUser(usuario.id)
         Toast.show({
           type: 'success',
           text1: 'Dejaste de seguir',
           text2: `@${usuario.username}`,
         })
       } else {
-        await searchService.followUser(usuario.id, session)
+        await searchService.followUser(usuario.id)
         Toast.show({
           type: 'success',
           text1: 'Siguiendo',

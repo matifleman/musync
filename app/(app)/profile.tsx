@@ -30,8 +30,6 @@ const GRID_SPACING = 2
 const GRID_COLUMNS = 3
 const GRID_ITEM_SIZE = Math.floor((width - GRID_SPACING * (GRID_COLUMNS - 1)) / GRID_COLUMNS)
 
-const DEFAULT_AVATAR = require("@/assets/dummyImages/avatars/avatar0.jpg")
-
 export default function ProfileScreen() {
   const { session, setUser: setContextUser } = useSession()
   const [selectedPost, setSelectedPost] = useState<PostType | null>(null)

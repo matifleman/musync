@@ -57,7 +57,7 @@ export default function CreatePostScreen() {
       mediaTypes: ["images"],
       quality: 0.8,
       allowsEditing: true,
-      aspect: [4, 1],
+      aspect: [3, 2],
     });
 
     if (!result.canceled && result.assets.length > 0) {

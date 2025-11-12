@@ -1,4 +1,5 @@
 import { UserSearchDTO, UserSearchResult, mapUserSearchDTOToSearchResult } from '@/types/User.type'
+import { apiFetch } from '@/utilities/api'
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL
 
@@ -8,29 +9,12 @@ export const searchService = {
       return []
     }
 
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json',
-    }
-
-    // Si hay sesión, agregar el token para obtener isFollowed
-    // Nota: El endpoint /api/users/search NO requiere autenticación,
-    // pero si mandas el token, te retorna isFollowed correctamente
-    if (session) {
-      try {
-        const sessionObj = JSON.parse(session)
-        if (sessionObj.token) {
-          headers['Authorization'] = `Bearer ${sessionObj.token}`
-        }
-      } catch (err) {
-        console.error('Error parsing session:', err)
-        // Continuar sin token, la búsqueda funciona igual
-      }
-    }
-
     try {
-      const response = await fetch(`${API_URL}/users/search?q=${encodeURIComponent(query)}`, {
+      const response = await apiFetch(`${API_URL}/users/search?q=${encodeURIComponent(query)}`, {
         method: 'GET',
-        headers,
+        headers: {
+          'Content-Type': 'application/json',
+        },
       })
 
       if (!response.ok) {
@@ -45,23 +29,11 @@ export const searchService = {
     }
   },
 
-  async followUser(userId: number, session: string): Promise<void> {
-    if (!session) {
-      throw new Error('Session required to follow users')
-    }
-
+  async followUser(userId: number): Promise<void> {
     try {
-      const sessionObj = JSON.parse(session)
-      const token = sessionObj.token
-
-      if (!token) {
-        throw new Error('No token found in session')
-      }
-
-      const response = await fetch(`${API_URL}/follow/${userId}`, {
+      const response = await apiFetch(`${API_URL}/follow/${userId}`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
       })
@@ -76,23 +48,11 @@ export const searchService = {
     }
   },
 
-  async unfollowUser(userId: number, session: string): Promise<void> {
-    if (!session) {
-      throw new Error('Session required to unfollow users')
-    }
-
+  async unfollowUser(userId: number): Promise<void> {
     try {
-      const sessionObj = JSON.parse(session)
-      const token = sessionObj.token
-
-      if (!token) {
-        throw new Error('No token found in session')
-      }
-
-      const response = await fetch(`${API_URL}/follow/${userId}`, {
+      const response = await apiFetch(`${API_URL}/follow/${userId}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
       })
