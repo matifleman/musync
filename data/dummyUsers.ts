@@ -11,7 +11,8 @@ export const dummyUsers: User[] = [
     profilePicture: require("@/assets/dummyImages/avatars/avatar0.jpg"),
     followersCount: 200,
     followedCount: 150,
-    isFollowed: false
+    isFollowed: false,
+    favoriteInstruments: []
   },
   {
     id: 2,
@@ -23,7 +24,8 @@ export const dummyUsers: User[] = [
     profilePicture: require("@/assets/dummyImages/avatars/avatar1.jpg"),
     followersCount: 200,
     followedCount: 150,
-    isFollowed: false
+    isFollowed: false,
+    favoriteInstruments: []
   },
   {
     id: 3,
@@ -35,7 +37,8 @@ export const dummyUsers: User[] = [
     profilePicture: require("@/assets/dummyImages/avatars/avatar0.jpg"),
     followersCount: 200,
     followedCount: 150,
-    isFollowed: false
+    isFollowed: false,
+    favoriteInstruments: []
   },
   {
     id: 4,
@@ -47,7 +50,8 @@ export const dummyUsers: User[] = [
     profilePicture: require("@/assets/dummyImages/avatars/avatar1.jpg"),
     followersCount: 200,
     followedCount: 150,
-    isFollowed: false
+    isFollowed: false,
+    favoriteInstruments: []
   },
   {
     id: 5,
@@ -59,6 +63,7 @@ export const dummyUsers: User[] = [
     profilePicture: require("@/assets/dummyImages/avatars/avatar0.jpg"),
     followersCount: 200,
     followedCount: 150,
-    isFollowed: false
+    isFollowed: false,
+    favoriteInstruments: []
   },
 ];

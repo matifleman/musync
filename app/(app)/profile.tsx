@@ -1,4 +1,6 @@
 import { AnimatedPressable } from "@/components/AnimatedPressable"
+import EditInstrumentsModal from "@/components/EditInstrumentsModal"
+import InstrumentBadges from "@/components/InstrumentBadges"
 import PostModal from "@/components/PostModal"
 import Stat from "@/components/Stat"
 import { COLORS } from '@/constants/Colors'
@@ -34,6 +36,7 @@ export default function ProfileScreen() {
   const { session, setUser: setContextUser } = useSession()
   const [selectedPost, setSelectedPost] = useState<PostType | null>(null)
   const [isModalVisible, setIsModalVisible] = useState(false)
+  const [isInstrumentsModalVisible, setIsInstrumentsModalVisible] = useState(false)
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -172,9 +175,10 @@ export default function ProfileScreen() {
           <Text style={styles.name}>{fullName}</Text>
           <Text style={styles.username}>@{user.userName}</Text>
           {/* Puedes agregar bio cuando tu backend lo tenga */}
+          <InstrumentBadges instruments={user.favoriteInstruments ?? []} />
 
           <View style={styles.actionRow}>
-            <TouchableOpacity style={styles.editButton}>
+            <TouchableOpacity style={styles.editButton} onPress={() => setIsInstrumentsModalVisible(true)}>
               <Text style={styles.editButtonText}>Edit profile</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.moreButton}>
@@ -219,10 +223,20 @@ export default function ProfileScreen() {
       </ScrollView>
 
       {/* Modal para mostrar el post completo */}
-      <PostModal 
+      <PostModal
         post={selectedPost}
         visible={isModalVisible}
         onClose={closePost}
+      />
+
+      <EditInstrumentsModal
+        visible={isInstrumentsModalVisible}
+        currentInstruments={user.favoriteInstruments ?? []}
+        onClose={() => setIsInstrumentsModalVisible(false)}
+        onSaved={(updatedUser) => {
+          setContextUser(updatedUser)
+          setUser(updatedUser)
+        }}
       />
     </>
   )

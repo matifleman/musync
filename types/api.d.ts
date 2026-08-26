@@ -734,6 +734,60 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/users/me/instruments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["UpdateInstrumentsCommand"];
+                    "text/json": components["schemas"]["UpdateInstrumentsCommand"];
+                    "application/*+json": components["schemas"]["UpdateInstrumentsCommand"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["UserDTO"];
+                        "application/json": components["schemas"]["UserDTO"];
+                        "text/json": components["schemas"]["UserDTO"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -769,6 +823,7 @@ export interface components {
             /** Format: int32 */
             id?: number;
             name?: string | null;
+            image?: string | null;
         };
         LoginRequest: {
             /** Format: email */
@@ -812,6 +867,9 @@ export interface components {
             email: string;
             password: string;
         };
+        UpdateInstrumentsCommand: {
+            instrumentIds?: number[] | null;
+        };
         UserDTO: {
             /** Format: int32 */
             id?: number;
@@ -827,6 +885,7 @@ export interface components {
             /** Format: int32 */
             followedCount?: number;
             isFollowed?: boolean;
+            favoriteInstruments?: components["schemas"]["InstrumentDTO"][] | null;
         };
         UserSearchDTO: {
             /** Format: int32 */

@@ -1,15 +1,22 @@
+export type Instrument = {
+  id: number
+  name: string
+  image: string
+}
+
 // Tipo principal del usuario (el que usas en tu app)
 export type User = {
   id: number
   firstName: string
   lastName: string
-  userName: string 
+  userName: string
   age: number
   email: string
   profilePicture: string
   followersCount: number
   followedCount: number
   isFollowed: boolean
+  favoriteInstruments: Instrument[]
 }
 
 // Tipo para búsqueda de usuarios (viene del endpoint /api/users/search)
