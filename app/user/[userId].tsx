@@ -33,7 +33,7 @@ const GRID_ITEM_SIZE = Math.floor((width - GRID_SPACING * (GRID_COLUMNS - 1)) / 
 
 export default function UserProfileScreen() {
   const { userId } = useLocalSearchParams<{ userId: string }>()
-  const { session, currentUser, setUser: setLoggedUser } = useSession()
+  const { currentUser, setUser: setLoggedUser } = useSession()
 
   const [user, setUser] = useState<User | null>(null)
   const [posts, setPosts] = useState<PostType[]>([])
@@ -81,7 +81,7 @@ export default function UserProfileScreen() {
   )
 
   const handleFollowToggle = async () => {
-    if (!session) return;
+    if (!currentUser) return;
     try {
       setIsLoadingFollow(true);
 

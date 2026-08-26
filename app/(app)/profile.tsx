@@ -33,7 +33,7 @@ const GRID_COLUMNS = 3
 const GRID_ITEM_SIZE = Math.floor((width - GRID_SPACING * (GRID_COLUMNS - 1)) / GRID_COLUMNS)
 
 export default function ProfileScreen() {
-  const { session, setUser: setContextUser } = useSession()
+  const { currentUser, setUser: setContextUser } = useSession()
   const [selectedPost, setSelectedPost] = useState<PostType | null>(null)
   const [isModalVisible, setIsModalVisible] = useState(false)
   const [isInstrumentsModalVisible, setIsInstrumentsModalVisible] = useState(false)
@@ -48,16 +48,12 @@ export default function ProfileScreen() {
       setLoading(true)
       setError(null)
       
-      if (!session) {
+      if (!currentUser) {
         setError('No active session')
         return
       }
 
-      // session is already typed (AuthResponse)
-      const userData = session.user
-
-      // Map the context user to your User type
-      setUser(resolveUserProfilePictureUrl(userData))
+      setUser(resolveUserProfilePictureUrl(currentUser))
     } catch (err) {
       console.error('Error loading user data:', err)
       setError('No se pudo cargar la información del perfil')
@@ -114,7 +110,7 @@ export default function ProfileScreen() {
     useCallback(() => {
       loadUserData();
       if (user?.id) loadPosts(user.id);
-    }, [session, user?.id])
+    }, [currentUser, user?.id])
   )
 
   const openPost = (post: PostType) => {

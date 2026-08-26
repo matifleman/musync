@@ -19,7 +19,7 @@ import Toast from 'react-native-toast-message'
 const DEFAULT_AVATAR = require('@/assets/dummyImages/avatars/avatar0.jpg')
 
 export default function Search() {
-  const { session } = useSession()
+  const { currentUser } = useSession()
   const [busqueda, setBusqueda] = useState('')
   const [usuarios, setUsuarios] = useState<UserSearchResult[]>([])
   const [loading, setLoading] = useState(false)
@@ -56,7 +56,7 @@ export default function Search() {
   }
 
   const toggleSeguir = async (usuario: UserSearchResult) => {
-    if (!session) {
+    if (!currentUser) {
       Toast.show({
         type: 'error',
         text1: 'Error',

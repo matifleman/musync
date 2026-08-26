@@ -1,6 +1,6 @@
+import * as authStore from "@/auth/authStore";
 import { useLoginMutation } from "@/hooks/useLoginMutation";
 import { useSignUpMutation } from "@/hooks/useSignUpMutation";
-import { useStorageState } from "@/hooks/useStorageState";
 import { AuthResponse } from "@/types/AuthResponse.type";
 import { LoginRequest } from "@/types/LoginRequest.type";
 import { RegistrationRequest } from "@/types/RegistrationRequest.type";
@@ -14,17 +14,15 @@ const AuthContext = createContext<{
   signUp: (registrationRequest: RegistrationRequest) => Promise<void>;
   signOut: () => void;
   setUser: (user: User) => void;
-  session: AuthResponse | null;
-  isLoading: boolean;
-  currentUser: User | null,
+  currentUser: User | null;
+  isBootstrapping: boolean;
 }>({
-  signIn: async (loginRequest: LoginRequest) => Promise.resolve(),
-  signUp: async (registrationRequest: RegistrationRequest) => Promise.resolve(),
-  signOut: () => null,
-  setUser: (user: User) => Promise<void>,
-  session: null,
-  isLoading: false,
+  signIn: async () => {},
+  signUp: async () => {},
+  signOut: () => {},
+  setUser: () => {},
   currentUser: null,
+  isBootstrapping: true,
 });
 
 export function useSession() {
@@ -36,21 +34,40 @@ export function useSession() {
   return value;
 }
 
+function persistAuthResponse(authResponse: AuthResponse): Promise<void> {
+  authStore.setAccessToken(authResponse.accessToken);
+  return authStore.setRefreshCredentials({
+    userId: authResponse.user.id,
+    refreshToken: authResponse.refreshToken,
+  });
+}
+
 export function SessionProvider({ children }: PropsWithChildren) {
-  const [[isLoading, session], setSession] = useStorageState<AuthResponse>('session');
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isBootstrapping, setIsBootstrapping] = useState(true);
   const loginMutation = useLoginMutation();
   const signUpMutation = useSignUpMutation();
   const router = useRouter();
 
-  const [currentUser, setUserState] = useState<User | null>(session?.user ?? null);
-
+  // A refresh attempt that fails for a previously-stored session (expired/revoked
+  // refresh token) is reported here by authStore, regardless of whether it happened
+  // during launch-time bootstrap or an API call's 401 retry.
   useEffect(() => {
-    if (session?.user) {
-      setUserState(session.user);
-    } else {
-      setUserState(null);
-    }
-  }, [session]);
+    return authStore.onUnauthorized(() => {
+      setCurrentUser(null);
+      router.replace("/sign-in");
+    });
+  }, [router]);
+
+  // Silently exchange a stored refresh token for a new access token before the
+  // authenticated part of the app is allowed to render.
+  useEffect(() => {
+    (async () => {
+      const refreshed = await authStore.refreshSession();
+      if (refreshed) setCurrentUser(refreshed.user);
+      setIsBootstrapping(false);
+    })();
+  }, []);
 
   return (
     <AuthContext
@@ -58,8 +75,8 @@ export function SessionProvider({ children }: PropsWithChildren) {
         signIn: async (loginRequest: LoginRequest): Promise<void> => {
           try {
             const authResponse: AuthResponse = await loginMutation.mutateAsync(loginRequest)
-            console.log(JSON.stringify(authResponse));
-            setSession(authResponse);
+            await persistAuthResponse(authResponse);
+            setCurrentUser(authResponse.user);
             Toast.show({
               type: "success",
               text1: "Login successfull"
@@ -77,8 +94,8 @@ export function SessionProvider({ children }: PropsWithChildren) {
         signUp: async (registrationRequest: RegistrationRequest): Promise<void> => {
           try{
             const authResponse: AuthResponse = await signUpMutation.mutateAsync(registrationRequest);
-            console.log(JSON.stringify(authResponse));
-            setSession(authResponse);
+            await persistAuthResponse(authResponse);
+            setCurrentUser(authResponse.user);
             Toast.show({
               type: "success",
               text1: "Registration successfull"
@@ -94,18 +111,17 @@ export function SessionProvider({ children }: PropsWithChildren) {
           }
         },
         signOut: () => {
-          setSession(null);
+          void authStore.signOutLocally();
+          setCurrentUser(null);
           router.replace("/sign-in");
         },
         setUser: (user: User) => {
-          if (!session?.accessToken || !session?.refreshToken) return;
-          
-          const updatedSession: AuthResponse = {...session, user};
-          setSession(updatedSession);
+          if (!currentUser) return;
+
+          setCurrentUser(user);
         },
-        session,
-        isLoading,
-        currentUser
+        currentUser,
+        isBootstrapping,
       }}>
       {children}
     </AuthContext>

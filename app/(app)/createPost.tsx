@@ -38,7 +38,7 @@ export default function CreatePostScreen() {
   const [loading, setLoading] = useState<boolean>(false);
 
   const router = useRouter();
-  const { session } = useSession();
+  const { currentUser } = useSession();
   const isFocused = useIsFocused();
 
   const {
@@ -89,9 +89,8 @@ export default function CreatePostScreen() {
   const onSubmit = async (data: FormData) => {
     setLoading(true);
     const formData = new FormData();
-    // Append AuthorId from session if available (backend expects AuthorId)
-    // session is a typed AuthResponse | null
-    const authorId = session?.user?.id ?? 0;
+    // Append AuthorId from the current user if available (backend expects AuthorId)
+    const authorId = currentUser?.id ?? 0;
     formData.append("AuthorId", String(authorId));
 
     // Use field names that match backend model (Caption, Image)
