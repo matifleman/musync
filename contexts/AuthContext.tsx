@@ -6,21 +6,21 @@ import { LoginRequest } from "@/types/LoginRequest.type";
 import { RegistrationRequest } from "@/types/RegistrationRequest.type";
 import { User } from "@/types/User.type";
 import { useRouter } from "expo-router";
-import { createContext, use, useEffect, useState, type PropsWithChildren } from 'react';
+import { createContext, use, useCallback, useEffect, useMemo, useState, type PropsWithChildren } from 'react';
 import Toast from "react-native-toast-message";
 
 const AuthContext = createContext<{
   signIn: (loginRequest: LoginRequest) => Promise<void>;
   signUp: (registrationRequest: RegistrationRequest) => Promise<void>;
   signOut: () => void;
-  setUser: (user: User) => void;
+  updateCurrentUser: (user: User) => void;
   currentUser: User | null;
   isBootstrapping: boolean;
 }>({
   signIn: async () => {},
   signUp: async () => {},
   signOut: () => {},
-  setUser: () => {},
+  updateCurrentUser: () => {},
   currentUser: null,
   isBootstrapping: true,
 });
@@ -69,60 +69,69 @@ export function SessionProvider({ children }: PropsWithChildren) {
     })();
   }, []);
 
-  return (
-    <AuthContext
-      value={{
-        signIn: async (loginRequest: LoginRequest): Promise<void> => {
-          try {
-            const authResponse: AuthResponse = await loginMutation.mutateAsync(loginRequest)
-            await persistAuthResponse(authResponse);
-            setCurrentUser(authResponse.user);
-            Toast.show({
-              type: "success",
-              text1: "Login successfull"
-            });
-          } catch (err) {
-            console.log(err);
-            Toast.show({
-              type: 'error',
-              text1: 'Login failed',
-              text2: err instanceof Error ? err.message : 'Try again',
-            });
-            throw(err);
-          }
-        },
-        signUp: async (registrationRequest: RegistrationRequest): Promise<void> => {
-          try{
-            const authResponse: AuthResponse = await signUpMutation.mutateAsync(registrationRequest);
-            await persistAuthResponse(authResponse);
-            setCurrentUser(authResponse.user);
-            Toast.show({
-              type: "success",
-              text1: "Registration successfull"
-            });
-          } catch (err) {
-            console.log(err);
-            Toast.show({
-              type: 'error',
-              text1: 'Registration failed',
-              text2: err instanceof Error ? err.message : 'Try again',
-            });
-            throw err;
-          }
-        },
-        signOut: () => {
-          void authStore.signOutLocally();
-          setCurrentUser(null);
-          router.replace("/sign-in");
-        },
-        setUser: (user: User) => {
-          if (!currentUser) return;
+  const signIn = useCallback(async (loginRequest: LoginRequest): Promise<void> => {
+    try {
+      const authResponse: AuthResponse = await loginMutation.mutateAsync(loginRequest);
+      await persistAuthResponse(authResponse);
+      setCurrentUser(authResponse.user);
+      Toast.show({
+        type: "success",
+        text1: "Login successfull"
+      });
+    } catch (err) {
+      console.log(err);
+      Toast.show({
+        type: 'error',
+        text1: 'Login failed',
+        text2: err instanceof Error ? err.message : 'Try again',
+      });
+      throw err;
+    }
+  }, [loginMutation]);
 
-          setCurrentUser(user);
-        },
-        currentUser,
-        isBootstrapping,
-      }}>
+  const signUp = useCallback(async (registrationRequest: RegistrationRequest): Promise<void> => {
+    try {
+      const authResponse: AuthResponse = await signUpMutation.mutateAsync(registrationRequest);
+      await persistAuthResponse(authResponse);
+      setCurrentUser(authResponse.user);
+      Toast.show({
+        type: "success",
+        text1: "Registration successfull"
+      });
+    } catch (err) {
+      console.log(err);
+      Toast.show({
+        type: 'error',
+        text1: 'Registration failed',
+        text2: err instanceof Error ? err.message : 'Try again',
+      });
+      throw err;
+    }
+  }, [signUpMutation]);
+
+  const signOut = useCallback(() => {
+    void authStore.signOutLocally();
+    setCurrentUser(null);
+    router.replace("/sign-in");
+  }, [router]);
+
+  // Guards against setting a user while signed out — only signIn/signUp may
+  // establish a session; this only ever updates an already-signed-in user.
+  const updateCurrentUser = useCallback((user: User) => {
+    setCurrentUser(prev => (prev ? user : prev));
+  }, []);
+
+  const value = useMemo(() => ({
+    signIn,
+    signUp,
+    signOut,
+    updateCurrentUser,
+    currentUser,
+    isBootstrapping,
+  }), [signIn, signUp, signOut, updateCurrentUser, currentUser, isBootstrapping]);
+
+  return (
+    <AuthContext value={value}>
       {children}
     </AuthContext>
   );

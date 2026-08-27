@@ -5,9 +5,7 @@ import Post from "@/components/Post";
 import { COLORS } from "@/constants/Colors";
 import { FONTS } from "@/constants/Fonts";
 import { useSession } from "@/contexts/AuthContext";
-import { Post as PostType } from "@/types/Post.type";
-import { apiFetch } from '@/utilities/api';
-import { resolveServerImageUrls } from "@/utilities/resolverServerImageUrls";
+import { usePosts } from "@/hooks/usePosts";
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useFocusEffect } from "expo-router";
 import { useCallback, useState } from 'react';
@@ -17,32 +15,12 @@ export default function Index() {
 
   const { signOut } = useSession();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  const [posts, setPosts] = useState<PostType[]>([]);
-  const [loadingPosts, setLoadingPosts] = useState(true);
-  const [fetchError, setFetchError] = useState<string | null>(null);
-
-  async function loadPosts() {
-    setLoadingPosts(true);
-    setFetchError(null);
-    try {
-      const res = await apiFetch(`${process.env.EXPO_PUBLIC_API_URL}/posts`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const posts: PostType[] = await res.json();
-      setPosts(resolveServerImageUrls(posts));
-    } catch (err) {
-      console.error('Failed loading posts', err);
-      setFetchError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setTimeout(() => {
-        setLoadingPosts(false);
-      }, 500);
-    }
-  }
+  const { data: posts = [], isLoading, isFetching, error, refetch } = usePosts();
 
   useFocusEffect(
     useCallback(() => {
-      loadPosts();
-    }, [])
+      refetch();
+    }, [refetch])
   );
 
   return (
@@ -61,7 +39,7 @@ export default function Index() {
           }}
         />
       </View>
-      {loadingPosts ? (
+      {isLoading ? (
         <Loading message="Loading posts..." />
       ) : (
         <FlatList
@@ -70,10 +48,10 @@ export default function Index() {
           keyExtractor={(item) => item.id.toString()}
           renderItem={({ item }) => <Post post={item} />}
           showsVerticalScrollIndicator={false}
-          refreshing={loadingPosts}
-          onRefresh={loadPosts}
+          refreshing={isFetching}
+          onRefresh={refetch}
           ListEmptyComponent={
-            <Text style={styles.noPostsText}>{fetchError ? `Failed to load posts: ${fetchError}` : 'Start following people to watch posts 🫂'}</Text>
+            <Text style={styles.noPostsText}>{error ? `Failed to load posts: ${error.message}` : 'Start following people to watch posts 🫂'}</Text>
           }
         />
       )}
