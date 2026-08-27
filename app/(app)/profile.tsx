@@ -6,8 +6,8 @@ import Stat from "@/components/Stat"
 import { COLORS } from '@/constants/Colors'
 import { useSession } from '@/contexts/AuthContext'
 import { useUserPosts } from "@/hooks/useUserPosts"
+import { usersService } from "@/services/usersService"
 import { Post as PostType } from '@/types/Post.type'
-import { apiFetch } from "@/utilities/api"
 import { resolveUserProfilePictureUrl } from "@/utilities/resolverServerImageUrls"
 import Entypo from "@expo/vector-icons/Entypo"
 import * as ImagePicker from 'expo-image-picker'
@@ -72,13 +72,7 @@ export default function ProfileScreen() {
       } as any);
 
       try {
-        const res = await apiFetch(`${process.env.EXPO_PUBLIC_API_URL}/users/me/avatar`, {
-          method: "PUT",
-          body: formData,
-        });
-
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const updatedUser = resolveUserProfilePictureUrl(await res.json());
+        const updatedUser = await usersService.updateAvatar(formData);
         updateCurrentUser(updatedUser);
       } catch (err) {
         console.error("Error uploading avatar", err);

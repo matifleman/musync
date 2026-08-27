@@ -6,7 +6,7 @@ import { COLORS } from "@/constants/Colors"
 import { useSession } from "@/contexts/AuthContext"
 import { useUserPosts } from "@/hooks/useUserPosts"
 import { useUserProfile } from "@/hooks/useUserProfile"
-import { searchService } from "@/services/searchService"
+import { usersService } from "@/services/usersService"
 import { Post as PostType } from "@/types/Post.type"
 import { User } from "@/types/User.type"
 import MaterialIcons from "@expo/vector-icons/MaterialIcons"
@@ -64,31 +64,22 @@ export default function UserProfileScreen() {
     try {
       setIsLoadingFollow(true);
 
-      if (isFollowed) {
-        await searchService.unfollowUser(parseInt(userId));
-        Toast.show({
-          type: 'success',
-          text1: "You've unfollowed",
-          text2: `@${user.userName}`,
-        });
-        queryClient.setQueryData<User>(['users', userId], (old) =>
-          old ? { ...old, followersCount: old.followersCount - 1 } : old
-        );
-        setIsFollowed(false);
-        updateCurrentUser({ ...currentUser, followedCount: currentUser.followedCount - 1 });
-      } else {
-        await searchService.followUser(parseInt(userId));
-        Toast.show({
-          type: 'success',
-          text1: 'Following',
-          text2: `@${user.userName}`,
-        })
-        queryClient.setQueryData<User>(['users', userId], (old) =>
-          old ? { ...old, followersCount: old.followersCount + 1 } : old
-        );
-        setIsFollowed(true);
-        updateCurrentUser({ ...currentUser, followedCount: currentUser.followedCount + 1 });
-      }
+      const result = isFollowed
+        ? await usersService.unfollowUser(parseInt(userId))
+        : await usersService.followUser(parseInt(userId));
+
+      Toast.show({
+        type: 'success',
+        text1: result.isFollowing ? 'Following' : "You've unfollowed",
+        text2: `@${user.userName}`,
+      });
+
+      // Trust the server-returned counts instead of guessing at +1/-1 locally.
+      queryClient.setQueryData<User>(['users', userId], (old) =>
+        old ? { ...old, followersCount: result.followersCount } : old
+      );
+      setIsFollowed(result.isFollowing);
+      updateCurrentUser({ ...currentUser, followedCount: result.followingCount });
     } catch (error) {
       console.error('Error al seguir/dejar de seguir:', error)
       Toast.show({

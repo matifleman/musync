@@ -1,7 +1,7 @@
 import { COLORS } from '@/constants/Colors'
 import { useSession } from '@/contexts/AuthContext'
 import { useSearchUsers } from '@/hooks/useSearchUsers'
-import { searchService } from '@/services/searchService'
+import { usersService } from '@/services/usersService'
 import { UserSearchResult } from '@/types/User.type'
 import { useQueryClient } from '@tanstack/react-query'
 import { router, useFocusEffect } from 'expo-router'
@@ -51,26 +51,22 @@ export default function Search() {
     try {
       setFollowingInProgress(usuario.id)
 
-      if (usuario.siguiendo) {
-        await searchService.unfollowUser(usuario.id)
-        Toast.show({
-          type: 'success',
-          text1: 'Dejaste de seguir',
-          text2: `@${usuario.username}`,
-        })
-      } else {
-        await searchService.followUser(usuario.id)
-        Toast.show({
-          type: 'success',
-          text1: 'Siguiendo',
-          text2: `@${usuario.username}`,
-        })
-      }
+      const result = usuario.siguiendo
+        ? await usersService.unfollowUser(usuario.id)
+        : await usersService.followUser(usuario.id)
 
-      // Actualizar el resultado cacheado de esta búsqueda
+      Toast.show({
+        type: 'success',
+        text1: result.isFollowing ? 'Siguiendo' : 'Dejaste de seguir',
+        text2: `@${usuario.username}`,
+      })
+
+      // Actualizar el resultado cacheado de esta búsqueda con los conteos reales del servidor
       queryClient.setQueryData<UserSearchResult[]>(
         ['users', 'search', debouncedQuery],
-        (old) => old?.map(u => u.id === usuario.id ? { ...u, siguiendo: !u.siguiendo } : u)
+        (old) => old?.map(u => u.id === usuario.id
+          ? { ...u, siguiendo: result.isFollowing, followersCount: result.followersCount }
+          : u)
       )
     } catch (error) {
       console.error('Error al seguir/dejar de seguir:', error)

@@ -1,0 +1,47 @@
+import { User } from '@/types/User.type'
+import { apiFetch } from '@/utilities/api'
+import { resolveUserProfilePictureUrl } from '@/utilities/resolverServerImageUrls'
+
+const API_URL = process.env.EXPO_PUBLIC_API_URL
+
+// Mirrors the backend's FollowResultDTO: the target user's new followersCount
+// and the acting (current) user's new followingCount, so callers can apply
+// both sides of a follow/unfollow from one server-authoritative response
+// instead of guessing at +1/-1 locally.
+export type FollowResult = {
+  userId: number
+  isFollowing: boolean
+  followersCount: number
+  followingCount: number
+}
+
+export const usersService = {
+  async getUser(userId: number | string): Promise<User> {
+    const response = await apiFetch(`${API_URL}/users/${userId}`)
+    if (!response.ok) throw new Error(`Failed to fetch user: ${response.status}`)
+    const data: User = await response.json()
+    return resolveUserProfilePictureUrl(data)
+  },
+
+  async updateAvatar(formData: FormData): Promise<User> {
+    const response = await apiFetch(`${API_URL}/users/me/avatar`, {
+      method: 'PUT',
+      body: formData,
+    })
+    if (!response.ok) throw new Error(`Failed to update avatar: ${response.status}`)
+    const data: User = await response.json()
+    return resolveUserProfilePictureUrl(data)
+  },
+
+  async followUser(userId: number): Promise<FollowResult> {
+    const response = await apiFetch(`${API_URL}/follow/${userId}`, { method: 'POST' })
+    if (!response.ok) throw new Error(`Failed to follow user: ${response.status}`)
+    return response.json()
+  },
+
+  async unfollowUser(userId: number): Promise<FollowResult> {
+    const response = await apiFetch(`${API_URL}/follow/${userId}`, { method: 'DELETE' })
+    if (!response.ok) throw new Error(`Failed to unfollow user: ${response.status}`)
+    return response.json()
+  },
+}

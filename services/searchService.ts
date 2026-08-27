@@ -28,42 +28,4 @@ export const searchService = {
       throw error
     }
   },
-
-  async followUser(userId: number): Promise<void> {
-    try {
-      const response = await apiFetch(`${API_URL}/follow/${userId}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.message || `Failed to follow user: ${response.status}`)
-      }
-    } catch (error) {
-      console.error('Error in followUser:', error)
-      throw error
-    }
-  },
-
-  async unfollowUser(userId: number): Promise<void> {
-    try {
-      const response = await apiFetch(`${API_URL}/follow/${userId}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.message || `Failed to unfollow user: ${response.status}`)
-      }
-    } catch (error) {
-      console.error('Error in unfollowUser:', error)
-      throw error
-    }
-  },
 }
