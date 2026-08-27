@@ -4,18 +4,18 @@ import PostModal from "@/components/PostModal"
 import Stat from "@/components/Stat"
 import { COLORS } from "@/constants/Colors"
 import { useSession } from "@/contexts/AuthContext"
-import { searchService } from "@/services/searchService"
+import { useUserPosts } from "@/hooks/useUserPosts"
+import { useUserProfile } from "@/hooks/useUserProfile"
+import { usersService } from "@/services/usersService"
 import { Post as PostType } from "@/types/Post.type"
 import { User } from "@/types/User.type"
-import { apiFetch } from "@/utilities/api"
-import { resolveServerImageUrls, resolveUserProfilePictureUrl } from "@/utilities/resolverServerImageUrls"
 import MaterialIcons from "@expo/vector-icons/MaterialIcons"
+import { useQueryClient } from "@tanstack/react-query"
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router"
-import React, { useCallback, useState } from "react"
+import React, { useCallback, useEffect, useState } from "react"
 import {
   ActivityIndicator,
   Dimensions,
-  FlatList,
   Image,
   ScrollView,
   StyleSheet,
@@ -33,81 +33,52 @@ const GRID_ITEM_SIZE = Math.floor((width - GRID_SPACING * (GRID_COLUMNS - 1)) / 
 
 export default function UserProfileScreen() {
   const { userId } = useLocalSearchParams<{ userId: string }>()
-  const { currentUser, setUser: setLoggedUser } = useSession()
+  const { currentUser, updateCurrentUser } = useSession()
+  const queryClient = useQueryClient()
 
-  const [user, setUser] = useState<User | null>(null)
-  const [posts, setPosts] = useState<PostType[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [isModalVisible, setIsModalVisible] = useState(false)
   const [selectedPost, setSelectedPost] = useState<PostType | null>(null)
   const [isFollowed, setIsFollowed] = useState<boolean>(false)
   const [isLoadingFollow, setIsLoadingFollow] = useState(false)
 
-  const loadUserProfile = async () => {
-    try {
-      setLoading(true)
-      const res = await apiFetch(`${process.env.EXPO_PUBLIC_API_URL}/users/${userId}`)
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const data: User = await res.json()
-      setUser(resolveUserProfilePictureUrl(data))
-      setIsFollowed(data.isFollowed ?? false)
-    } catch (err) {
-      console.error(err)
-      setError("No se pudo cargar el perfil.")
-    } finally {
-      setLoading(false)
-    }
-  }
+  const { data: user, isLoading, error, refetch: refetchProfile } = useUserProfile(userId)
+  const { data: posts = [], refetch: refetchPosts } = useUserPosts(userId ? Number(userId) : undefined)
 
-  const loadPosts = async () => {
-    try {
-      const res = await apiFetch(`${process.env.EXPO_PUBLIC_API_URL}/posts/author/${userId}`)
-      if (!res.ok) throw new Error("Error al obtener posts")
-      const data: PostType[] = await res.json()
-      setPosts(resolveServerImageUrls(data))
-    } catch (err) {
-      console.error(err)
-    }
-  }
+  // Seed the local follow toggle from the fetched profile whenever it (re)loads.
+  useEffect(() => {
+    setIsFollowed(user?.isFollowed ?? false)
+  }, [user])
 
   useFocusEffect(
     useCallback(() => {
       if (userId) {
-        loadUserProfile()
-        loadPosts()
+        refetchProfile()
+        refetchPosts()
       }
-    }, [userId])
+    }, [userId, refetchProfile, refetchPosts])
   )
 
   const handleFollowToggle = async () => {
-    if (!currentUser) return;
+    if (!currentUser || !user) return;
     try {
       setIsLoadingFollow(true);
 
-      if (isFollowed) {
-        await searchService.unfollowUser(parseInt(userId));
-        Toast.show({
-          type: 'success',
-          text1: "You've unfollowed",
-          text2: `@${user?.userName}`,
-        });
-        if(user) setUser({...user, followersCount: user.followersCount-1});
-        setIsFollowed(false);
-        if(currentUser)
-          setLoggedUser({...currentUser, followedCount: currentUser?.followedCount-1});
-      } else {
-        await searchService.followUser(parseInt(userId));
-        Toast.show({
-          type: 'success',
-          text1: 'Following',
-          text2: `@${user?.userName}`,
-        })
-        if(user) setUser({...user, followersCount: user.followersCount+1});
-        setIsFollowed(true);
-        if(currentUser)
-          setLoggedUser({...currentUser, followedCount: currentUser?.followedCount+1});
-      }
+      const result = isFollowed
+        ? await usersService.unfollowUser(parseInt(userId))
+        : await usersService.followUser(parseInt(userId));
+
+      Toast.show({
+        type: 'success',
+        text1: result.isFollowing ? 'Following' : "You've unfollowed",
+        text2: `@${user.userName}`,
+      });
+
+      // Trust the server-returned counts instead of guessing at +1/-1 locally.
+      queryClient.setQueryData<User>(['users', userId], (old) =>
+        old ? { ...old, followersCount: result.followersCount } : old
+      );
+      setIsFollowed(result.isFollowing);
+      updateCurrentUser({ ...currentUser, followedCount: result.followingCount });
     } catch (error) {
       console.error('Error al seguir/dejar de seguir:', error)
       Toast.show({
@@ -130,7 +101,7 @@ export default function UserProfileScreen() {
     setIsModalVisible(false)
   }
 
-  if (loading)
+  if (isLoading)
     return (
       <View style={[styles.screen, styles.center]}>
         <ActivityIndicator size="large" color={COLORS.white} />
@@ -140,7 +111,7 @@ export default function UserProfileScreen() {
   if (error || !user)
     return (
       <View style={[styles.screen, styles.center]}>
-        <Text style={styles.errorText}>{error || "Error desconocido"}</Text>
+        <Text style={styles.errorText}>{error?.message || "Error desconocido"}</Text>
       </View>
     )
 
@@ -205,23 +176,15 @@ export default function UserProfileScreen() {
         }
 
         {/* Posts grid */}
-        <View>
-          <FlatList
-            data={posts}
-            keyExtractor={(item) => String(item.id)}
-            numColumns={GRID_COLUMNS}
-            columnWrapperStyle={{ gap: GRID_SPACING }}
-            contentContainerStyle={{ alignItems: "flex-start" }}
-            renderItem={({ item }) => (
-              <TouchableOpacity onPress={() => openPost(item)}>
-                <Image
-                  source={typeof item.image === "string" ? { uri: item.image } : item.image}
-                  style={styles.gridItem}
-                />
-              </TouchableOpacity>
-            )}
-            scrollEnabled={false}
-          />
+        <View style={styles.postsGrid}>
+          {posts.map((item) => (
+            <TouchableOpacity key={item.id} onPress={() => openPost(item)}>
+              <Image
+                source={typeof item.image === "string" ? { uri: item.image } : item.image}
+                style={styles.gridItem}
+              />
+            </TouchableOpacity>
+          ))}
         </View>
       </ScrollView>
 
@@ -322,10 +285,14 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     fontWeight: "600",
   },
+  postsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: GRID_SPACING,
+  },
   gridItem: {
     width: GRID_ITEM_SIZE,
     height: GRID_ITEM_SIZE,
-    marginBottom: GRID_SPACING,
     backgroundColor: "#222",
   },
   errorText: {

@@ -2,10 +2,11 @@ import { AnimatedPressable } from "@/components/AnimatedPressable";
 import { COLORS } from "@/constants/Colors";
 import { FONTS } from "@/constants/Fonts";
 import { useSession } from "@/contexts/AuthContext";
-import { apiFetch } from "@/utilities/api";
+import { postsService } from "@/services/postsService";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useIsFocused } from "@react-navigation/native";
+import { useQueryClient } from "@tanstack/react-query";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -40,6 +41,7 @@ export default function CreatePostScreen() {
   const router = useRouter();
   const { currentUser } = useSession();
   const isFocused = useIsFocused();
+  const queryClient = useQueryClient();
 
   const {
     control,
@@ -104,17 +106,12 @@ export default function CreatePostScreen() {
     }
 
     try {
-      const res = await apiFetch(`${process.env.EXPO_PUBLIC_API_URL}/posts`, {
-        method: "POST",
-        body: formData,
-        // NOTE: apiFetch will attach Authorization header when token is available
-      });
-
-      if (!res.ok) throw new Error("Error creating the post");
-      const json = await res.json();
-      console.log("Post created:", json);
+      await postsService.createPost(formData);
+      // Invalidates both the feed ("posts") and any author-specific post lists
+      // ("posts", "author", id), since react-query matches by key prefix.
+      queryClient.invalidateQueries({ queryKey: ["posts"] });
       router.back();
-    } 
+    }
     catch (err) {
       console.error("Error:", err);
     } 

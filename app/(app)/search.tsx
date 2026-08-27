@@ -1,7 +1,9 @@
 import { COLORS } from '@/constants/Colors'
 import { useSession } from '@/contexts/AuthContext'
-import { searchService } from '@/services/searchService'
+import { useSearchUsers } from '@/hooks/useSearchUsers'
+import { usersService } from '@/services/usersService'
 import { UserSearchResult } from '@/types/User.type'
+import { useQueryClient } from '@tanstack/react-query'
 import { router, useFocusEffect } from 'expo-router'
 import React, { useCallback, useEffect, useState } from 'react'
 import {
@@ -20,40 +22,21 @@ const DEFAULT_AVATAR = require('@/assets/dummyImages/avatars/avatar0.jpg')
 
 export default function Search() {
   const { currentUser } = useSession()
+  const queryClient = useQueryClient()
   const [busqueda, setBusqueda] = useState('')
-  const [usuarios, setUsuarios] = useState<UserSearchResult[]>([])
-  const [loading, setLoading] = useState(false)
+  const [debouncedQuery, setDebouncedQuery] = useState('')
   const [followingInProgress, setFollowingInProgress] = useState<number | null>(null)
 
   // Buscar usuarios cuando cambia el texto de búsqueda
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
-      if (busqueda.trim().length > 0) {
-        buscarUsuarios()
-      } else {
-        setUsuarios([])
-      }
+      setDebouncedQuery(busqueda.trim())
     }, 300) // Espera 300ms después de que el usuario deje de escribir
 
     return () => clearTimeout(delayDebounce)
   }, [busqueda])
 
-  const buscarUsuarios = async () => {
-    try {
-      setLoading(true)
-      const resultados = await searchService.searchUsers(busqueda)
-      setUsuarios(resultados)
-    } catch (error) {
-      console.error('Error buscando usuarios:', error)
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: 'No se pudo realizar la búsqueda',
-      })
-    } finally {
-      setLoading(false)
-    }
-  }
+  const { data: usuarios = [], isFetching: loading } = useSearchUsers(debouncedQuery)
 
   const toggleSeguir = async (usuario: UserSearchResult) => {
     if (!currentUser) {
@@ -68,28 +51,23 @@ export default function Search() {
     try {
       setFollowingInProgress(usuario.id)
 
-      if (usuario.siguiendo) {
-        await searchService.unfollowUser(usuario.id)
-        Toast.show({
-          type: 'success',
-          text1: 'Dejaste de seguir',
-          text2: `@${usuario.username}`,
-        })
-      } else {
-        await searchService.followUser(usuario.id)
-        Toast.show({
-          type: 'success',
-          text1: 'Siguiendo',
-          text2: `@${usuario.username}`,
-        })
-      }
+      const result = usuario.siguiendo
+        ? await usersService.unfollowUser(usuario.id)
+        : await usersService.followUser(usuario.id)
 
-      // Actualizar el estado local
-      setUsuarios(usuarios.map(u =>
-        u.id === usuario.id
-          ? { ...u, siguiendo: !u.siguiendo }
-          : u
-      ))
+      Toast.show({
+        type: 'success',
+        text1: result.isFollowing ? 'Siguiendo' : 'Dejaste de seguir',
+        text2: `@${usuario.username}`,
+      })
+
+      // Actualizar el resultado cacheado de esta búsqueda con los conteos reales del servidor
+      queryClient.setQueryData<UserSearchResult[]>(
+        ['users', 'search', debouncedQuery],
+        (old) => old?.map(u => u.id === usuario.id
+          ? { ...u, siguiendo: result.isFollowing, followersCount: result.followersCount }
+          : u)
+      )
     } catch (error) {
       console.error('Error al seguir/dejar de seguir:', error)
       Toast.show({
@@ -106,8 +84,7 @@ export default function Search() {
     useCallback(() => {
       return () => {
         setBusqueda('');
-        setUsuarios([]);
-        setLoading(false);
+        setDebouncedQuery('');
         setFollowingInProgress(null);
       };
     }, [])

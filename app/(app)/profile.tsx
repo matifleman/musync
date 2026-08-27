@@ -5,18 +5,17 @@ import PostModal from "@/components/PostModal"
 import Stat from "@/components/Stat"
 import { COLORS } from '@/constants/Colors'
 import { useSession } from '@/contexts/AuthContext'
+import { useUserPosts } from "@/hooks/useUserPosts"
+import { usersService } from "@/services/usersService"
 import { Post as PostType } from '@/types/Post.type'
-import { User } from '@/types/User.type'
-import { apiFetch } from "@/utilities/api"
-import { resolveServerImageUrls, resolveUserProfilePictureUrl } from "@/utilities/resolverServerImageUrls"
+import { resolveUserProfilePictureUrl } from "@/utilities/resolverServerImageUrls"
 import Entypo from "@expo/vector-icons/Entypo"
 import * as ImagePicker from 'expo-image-picker'
 import { router, useFocusEffect } from "expo-router"
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import {
   ActivityIndicator,
   Dimensions,
-  FlatList,
   Image,
   ScrollView,
   StyleSheet,
@@ -33,44 +32,26 @@ const GRID_COLUMNS = 3
 const GRID_ITEM_SIZE = Math.floor((width - GRID_SPACING * (GRID_COLUMNS - 1)) / GRID_COLUMNS)
 
 export default function ProfileScreen() {
-  const { currentUser, setUser: setContextUser } = useSession()
+  const { currentUser, updateCurrentUser } = useSession()
   const [selectedPost, setSelectedPost] = useState<PostType | null>(null)
   const [isModalVisible, setIsModalVisible] = useState(false)
   const [isInstrumentsModalVisible, setIsInstrumentsModalVisible] = useState(false)
-  const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
 
-  const [posts, setPosts] = useState<PostType[]>([])
+  // The profile's own user is always just the session's currentUser — no need
+  // for a separate local copy that could drift out of sync with it.
+  const user = useMemo(
+    () => (currentUser ? resolveUserProfilePictureUrl(currentUser) : null),
+    [currentUser]
+  )
 
-  const loadUserData = () => {
-    try {
-      setLoading(true)
-      setError(null)
-      
-      if (!currentUser) {
-        setError('No active session')
-        return
-      }
+  const { data: posts = [], isLoading: postsLoading, refetch: refetchPosts } = useUserPosts(user?.id)
 
-      setUser(resolveUserProfilePictureUrl(currentUser))
-    } catch (err) {
-      console.error('Error loading user data:', err)
-      setError('No se pudo cargar la información del perfil')
-    } finally {
-      setLoading(false)
-    }
-  }
-  const loadPosts = async (userId: number) => {
-    const response: Response = await apiFetch(`${process.env.EXPO_PUBLIC_API_URL}/posts/author/${userId}`)
-    if (!response.ok) {
-      console.log('Response not ok:', response);
-      throw new Error('Error fetching posts');
-    }
-    const postsData: PostType[] = await response.json();
-    setPosts(resolveServerImageUrls(postsData));
-  }
-  
+  useFocusEffect(
+    useCallback(() => {
+      refetchPosts()
+    }, [refetchPosts])
+  )
+
   const handleUpdateAvatar = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images"],
@@ -90,28 +71,13 @@ export default function ProfileScreen() {
       } as any);
 
       try {
-        const res = await apiFetch(`${process.env.EXPO_PUBLIC_API_URL}/users/me/avatar`, {
-          method: "PUT",
-          body: formData,
-        });
-
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const updatedUser = resolveUserProfilePictureUrl(await res.json());
-        console.log(updatedUser);
-        setContextUser(updatedUser);
-        setUser(updatedUser);
+        const updatedUser = await usersService.updateAvatar(formData);
+        updateCurrentUser(updatedUser);
       } catch (err) {
         console.error("Error uploading avatar", err);
       }
     }
   }
-  
-  useFocusEffect(
-    useCallback(() => {
-      loadUserData();
-      if (user?.id) loadPosts(user.id);
-    }, [currentUser, user?.id])
-  )
 
   const openPost = (post: PostType) => {
     setSelectedPost(post)
@@ -123,21 +89,10 @@ export default function ProfileScreen() {
     setSelectedPost(null)
   }
 
-  if (loading) {
+  if (!user) {
     return (
       <View style={[styles.screen, styles.centerContent]}>
         <ActivityIndicator size="large" color={COLORS.white} />
-      </View>
-    )
-  }
-
-  if (error || !user) {
-    return (
-      <View style={[styles.screen, styles.centerContent]}>
-        <Text style={styles.errorText}>{error || 'Error desconocido'}</Text>
-        <TouchableOpacity onPress={loadUserData} style={styles.retryButton}>
-          <Text style={styles.retryButtonText}>Reintentar</Text>
-        </TouchableOpacity>
       </View>
     )
   }
@@ -184,7 +139,7 @@ export default function ProfileScreen() {
         </View>
 
         {
-          postsCount === 0 && (
+          !postsLoading && postsCount === 0 && (
             <View style={[styles.centerContent, {marginTop: 40}]}>
               <Text style={{color: COLORS.white, fontSize: 20}}>You haven&apos;t posted anything yet.</Text>
               <AnimatedPressable style={{flexDirection: "row", marginTop: 20, alignItems: "center"}} onPress={() => router.navigate("/(app)/createPost")}>
@@ -198,23 +153,15 @@ export default function ProfileScreen() {
         }
 
         {/* grid of posts */}
-        <View style={{paddingHorizontal: 0}}>
-          <FlatList
-            data={posts}
-            keyExtractor={(item) => String(item.id)}
-            numColumns={GRID_COLUMNS}
-            columnWrapperStyle={{ gap: GRID_SPACING }}
-            contentContainerStyle={{ alignItems: 'flex-start' }}
-            renderItem={({ item }) => (
-              <TouchableOpacity onPress={() => openPost(item)}>
-                <Image 
-                  source={typeof item.image === 'string' ? { uri: item.image } : item.image} 
-                  style={styles.gridItem} 
-                />
-              </TouchableOpacity>
-            )}
-            scrollEnabled={false}
-          />
+        <View style={styles.postsGrid}>
+          {posts.map((item) => (
+            <TouchableOpacity key={item.id} onPress={() => openPost(item)}>
+              <Image
+                source={typeof item.image === 'string' ? { uri: item.image } : item.image}
+                style={styles.gridItem}
+              />
+            </TouchableOpacity>
+          ))}
         </View>
       </ScrollView>
 
@@ -230,8 +177,7 @@ export default function ProfileScreen() {
         currentInstruments={user.favoriteInstruments ?? []}
         onClose={() => setIsInstrumentsModalVisible(false)}
         onSaved={(updatedUser) => {
-          setContextUser(updatedUser)
-          setUser(updatedUser)
+          updateCurrentUser(updatedUser)
         }}
       />
     </>
@@ -338,10 +284,14 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: COLORS.white,
   },
+  postsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: GRID_SPACING,
+  },
   gridItem: {
     width: GRID_ITEM_SIZE,
     height: GRID_ITEM_SIZE,
-    marginBottom: GRID_SPACING,
     backgroundColor: '#ddd',
   },
   errorText: {

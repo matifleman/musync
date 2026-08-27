@@ -1,6 +1,6 @@
 import { COLORS } from '@/constants/Colors';
+import { postsService } from '@/services/postsService';
 import { Post } from '@/types/Post.type';
-import { apiFetch } from '@/utilities/api';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import React, { useState } from 'react';
 import {
@@ -20,9 +20,8 @@ export default function PostFooter({ post }: Props) {
   const [showComments, setShowComments] = useState(false);
 
   const toggleLike = () => {
-    apiFetch(`${process.env.EXPO_PUBLIC_API_URL}/posts/${post.id}/like`, {
-      method: liked ? 'DELETE' : 'POST',
-    }).then(() => setLiked(!liked));
+    const request = liked ? postsService.unlikePost(post.id) : postsService.likePost(post.id);
+    request.then(() => setLiked(!liked));
   }
   const hideComments = () => setShowComments(false);
 
