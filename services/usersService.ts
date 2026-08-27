@@ -1,19 +1,15 @@
+import type { components } from '@/types/api'
+import type { Defined } from '@/types/apiTypeHelpers'
 import { User } from '@/types/User.type'
 import { apiFetch } from '@/utilities/api'
 import { resolveUserProfilePictureUrl } from '@/utilities/resolverServerImageUrls'
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL
 
-// Mirrors the backend's FollowResultDTO: the target user's new followersCount
-// and the acting (current) user's new followingCount, so callers can apply
-// both sides of a follow/unfollow from one server-authoritative response
-// instead of guessing at +1/-1 locally.
-export type FollowResult = {
-  userId: number
-  isFollowing: boolean
-  followersCount: number
-  followingCount: number
-}
+// The target user's new followersCount and the acting (current) user's new
+// followingCount, so callers can apply both sides of a follow/unfollow from
+// one server-authoritative response instead of guessing at +1/-1 locally.
+export type FollowResult = Defined<components["schemas"]["FollowResultDTO"]>
 
 export const usersService = {
   async getUser(userId: number | string): Promise<User> {

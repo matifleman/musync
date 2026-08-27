@@ -1,34 +1,15 @@
-export type Instrument = {
-  id: number
-  name: string
-  image: string
-}
+import type { components } from './api'
+import type { Defined } from './apiTypeHelpers'
+
+export type Instrument = Defined<components["schemas"]["InstrumentDTO"]>
 
 // Tipo principal del usuario (el que usas en tu app)
-export type User = {
-  id: number
-  firstName: string
-  lastName: string
-  userName: string
-  age: number
-  email: string
-  profilePicture: string
-  followersCount: number
-  followedCount: number
-  isFollowed: boolean
+export type User = Defined<Omit<components["schemas"]["UserDTO"], "favoriteInstruments">> & {
   favoriteInstruments: Instrument[]
 }
 
 // Tipo para búsqueda de usuarios (viene del endpoint /api/users/search)
-export interface UserSearchDTO {
-  id: number
-  firstName: string
-  lastName: string
-  userName: string
-  profilePicture: string
-  followersCount: number
-  isFollowed: boolean
-}
+export type UserSearchDTO = Defined<components["schemas"]["UserSearchDTO"]>
 
 // Tipo para la UI de búsqueda
 export interface UserSearchResult {
