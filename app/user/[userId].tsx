@@ -16,7 +16,6 @@ import React, { useCallback, useEffect, useState } from "react"
 import {
   ActivityIndicator,
   Dimensions,
-  FlatList,
   Image,
   ScrollView,
   StyleSheet,
@@ -177,23 +176,15 @@ export default function UserProfileScreen() {
         }
 
         {/* Posts grid */}
-        <View>
-          <FlatList
-            data={posts}
-            keyExtractor={(item) => String(item.id)}
-            numColumns={GRID_COLUMNS}
-            columnWrapperStyle={{ gap: GRID_SPACING }}
-            contentContainerStyle={{ alignItems: "flex-start" }}
-            renderItem={({ item }) => (
-              <TouchableOpacity onPress={() => openPost(item)}>
-                <Image
-                  source={typeof item.image === "string" ? { uri: item.image } : item.image}
-                  style={styles.gridItem}
-                />
-              </TouchableOpacity>
-            )}
-            scrollEnabled={false}
-          />
+        <View style={styles.postsGrid}>
+          {posts.map((item) => (
+            <TouchableOpacity key={item.id} onPress={() => openPost(item)}>
+              <Image
+                source={typeof item.image === "string" ? { uri: item.image } : item.image}
+                style={styles.gridItem}
+              />
+            </TouchableOpacity>
+          ))}
         </View>
       </ScrollView>
 
@@ -294,10 +285,14 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     fontWeight: "600",
   },
+  postsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: GRID_SPACING,
+  },
   gridItem: {
     width: GRID_ITEM_SIZE,
     height: GRID_ITEM_SIZE,
-    marginBottom: GRID_SPACING,
     backgroundColor: "#222",
   },
   errorText: {
