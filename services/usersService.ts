@@ -1,6 +1,6 @@
 import type { components } from '@/types/api'
 import type { Defined } from '@/types/apiTypeHelpers'
-import { User } from '@/types/User.type'
+import { CurrentUser, User } from '@/types/User.type'
 import { apiFetch } from '@/utilities/api'
 import { resolveUserProfilePictureUrl } from '@/utilities/resolverServerImageUrls'
 
@@ -19,13 +19,13 @@ export const usersService = {
     return resolveUserProfilePictureUrl(data)
   },
 
-  async updateAvatar(formData: FormData): Promise<User> {
+  async updateAvatar(formData: FormData): Promise<CurrentUser> {
     const response = await apiFetch(`${API_URL}/users/me/avatar`, {
       method: 'PUT',
       body: formData,
     })
     if (!response.ok) throw new Error(`Failed to update avatar: ${response.status}`)
-    const data: User = await response.json()
+    const data: CurrentUser = await response.json()
     return resolveUserProfilePictureUrl(data)
   },
 

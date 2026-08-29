@@ -11,6 +11,10 @@ export function useSignUpMutation() {
     });
     
     if (!response.ok) {
+      if (response.status === 429) {
+        throw new Error("Too many attempts. Please wait a moment and try again.");
+      }
+
       const errorBody = await response.json();
       console.log('Registration error:', errorBody);
       const firstError =

@@ -97,7 +97,21 @@ async function clearSession(): Promise<void> {
   await clearRefreshCredentials()
 }
 
-export async function signOutLocally(): Promise<void> {
+// Revokes the current device's refresh token server-side, then clears local
+// session state regardless of whether the network call succeeded.
+export async function signOut(): Promise<void> {
+  const credentials = await getRefreshCredentials()
+  if (credentials) {
+    try {
+      await fetch(`${process.env.EXPO_PUBLIC_API_URL}/auth/logout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: credentials.userId, refreshToken: credentials.refreshToken }),
+      })
+    } catch (err) {
+      console.error('Logout request failed:', err)
+    }
+  }
   await clearSession()
 }
 

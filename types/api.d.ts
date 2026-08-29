@@ -177,6 +177,56 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["RefreshRequest"];
+                    "text/json": components["schemas"]["RefreshRequest"];
+                    "application/*+json": components["schemas"]["RefreshRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CustomProblemDetails"];
+                        "application/json": components["schemas"]["CustomProblemDetails"];
+                        "text/json": components["schemas"]["CustomProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/follow/{userId}": {
         parameters: {
             query?: never;
@@ -371,8 +421,6 @@ export interface paths {
             requestBody?: {
                 content: {
                     "multipart/form-data": {
-                        /** Format: int32 */
-                        AuthorId?: number;
                         Caption?: string;
                         /** Format: binary */
                         Image: string;
@@ -389,6 +437,17 @@ export interface paths {
                         "text/plain": components["schemas"]["PostDTO"];
                         "application/json": components["schemas"]["PostDTO"];
                         "text/json": components["schemas"]["PostDTO"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
                     };
                 };
             };
@@ -597,9 +656,9 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "text/plain": components["schemas"]["UserDTO"];
-                        "application/json": components["schemas"]["UserDTO"];
-                        "text/json": components["schemas"]["UserDTO"];
+                        "text/plain": components["schemas"]["CurrentUserDTO"];
+                        "application/json": components["schemas"]["CurrentUserDTO"];
+                        "text/json": components["schemas"]["CurrentUserDTO"];
                     };
                 };
             };
@@ -621,7 +680,10 @@ export interface paths {
         };
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    pageNumber?: number;
+                    pageSize?: number;
+                };
                 header?: never;
                 path?: never;
                 cookie?: never;
@@ -720,9 +782,9 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "text/plain": components["schemas"]["UserDTO"];
-                        "application/json": components["schemas"]["UserDTO"];
-                        "text/json": components["schemas"]["UserDTO"];
+                        "text/plain": components["schemas"]["CurrentUserDTO"];
+                        "application/json": components["schemas"]["CurrentUserDTO"];
+                        "text/json": components["schemas"]["CurrentUserDTO"];
                     };
                 };
             };
@@ -763,9 +825,9 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "text/plain": components["schemas"]["UserDTO"];
-                        "application/json": components["schemas"]["UserDTO"];
-                        "text/json": components["schemas"]["UserDTO"];
+                        "text/plain": components["schemas"]["CurrentUserDTO"];
+                        "application/json": components["schemas"]["CurrentUserDTO"];
+                        "text/json": components["schemas"]["CurrentUserDTO"];
                     };
                 };
                 /** @description Bad Request */
@@ -793,9 +855,26 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         AuthResponse: {
-            user?: components["schemas"]["UserDTO"];
+            user?: components["schemas"]["CurrentUserDTO"];
             accessToken?: string | null;
             refreshToken?: string | null;
+        };
+        CurrentUserDTO: {
+            /** Format: int32 */
+            id?: number;
+            firstName: string | null;
+            lastName: string | null;
+            userName: string | null;
+            /** Format: int32 */
+            age?: number;
+            profilePicture: string | null;
+            /** Format: int32 */
+            followersCount?: number;
+            /** Format: int32 */
+            followedCount?: number;
+            isFollowed?: boolean;
+            favoriteInstruments?: components["schemas"]["InstrumentDTO"][] | null;
+            email: string | null;
         };
         CustomProblemDetails: {
             type?: string | null;
@@ -878,7 +957,6 @@ export interface components {
             userName: string | null;
             /** Format: int32 */
             age?: number;
-            email: string | null;
             profilePicture: string | null;
             /** Format: int32 */
             followersCount?: number;

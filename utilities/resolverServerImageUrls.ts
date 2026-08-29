@@ -1,5 +1,4 @@
 import { Post } from "@/types/Post.type";
-import { User } from "@/types/User.type";
 
 export const resolveServerImageUrls = (posts: Post[]): Post[] => {
   return posts.map((post: Post) => ({
@@ -12,7 +11,7 @@ export const resolveServerImageUrls = (posts: Post[]): Post[] => {
   }));
 }
 
-export const resolveUserProfilePictureUrl = (user: User): User => {
+export const resolveUserProfilePictureUrl = <T extends { profilePicture: string }>(user: T): T => {
   return {
     ...user,
     profilePicture: `${process.env.EXPO_PUBLIC_SERVER_URL}/${user.profilePicture}`

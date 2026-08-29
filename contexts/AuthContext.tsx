@@ -110,7 +110,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
   }, [signUpMutation]);
 
   const signOut = useCallback(() => {
-    void authStore.signOutLocally();
+    void authStore.signOut();
     setCurrentUser(null);
     router.replace("/sign-in");
   }, [router]);

@@ -1,7 +1,6 @@
 import { AnimatedPressable } from "@/components/AnimatedPressable";
 import { COLORS } from "@/constants/Colors";
 import { FONTS } from "@/constants/Fonts";
-import { useSession } from "@/contexts/AuthContext";
 import { postsService } from "@/services/postsService";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -39,7 +38,6 @@ export default function CreatePostScreen() {
   const [loading, setLoading] = useState<boolean>(false);
 
   const router = useRouter();
-  const { currentUser } = useSession();
   const isFocused = useIsFocused();
   const queryClient = useQueryClient();
 
@@ -91,9 +89,6 @@ export default function CreatePostScreen() {
   const onSubmit = async (data: FormData) => {
     setLoading(true);
     const formData = new FormData();
-    // Append AuthorId from the current user if available (backend expects AuthorId)
-    const authorId = currentUser?.id ?? 0;
-    formData.append("AuthorId", String(authorId));
 
     // Use field names that match backend model (Caption, Image)
     formData.append("Caption", data.caption);

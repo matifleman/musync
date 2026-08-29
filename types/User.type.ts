@@ -8,6 +8,12 @@ export type User = Defined<Omit<components["schemas"]["UserDTO"], "favoriteInstr
   favoriteInstruments: Instrument[]
 }
 
+// The authenticated user (includes email) — only used for responses about the
+// caller's own account: login/register/refresh, GET /users/me, PUT /users/me/*
+export type CurrentUser = Defined<Omit<components["schemas"]["CurrentUserDTO"], "favoriteInstruments">> & {
+  favoriteInstruments: Instrument[]
+}
+
 // Tipo para búsqueda de usuarios (viene del endpoint /api/users/search)
 export type UserSearchDTO = Defined<components["schemas"]["UserSearchDTO"]>
 

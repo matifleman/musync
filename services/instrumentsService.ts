@@ -1,4 +1,4 @@
-import { Instrument, User } from '@/types/User.type'
+import { CurrentUser, Instrument } from '@/types/User.type'
 import { apiFetch } from '@/utilities/api'
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL
@@ -14,7 +14,7 @@ export const instrumentsService = {
     return response.json()
   },
 
-  async updateMyInstruments(instrumentIds: number[]): Promise<User> {
+  async updateMyInstruments(instrumentIds: number[]): Promise<CurrentUser> {
     const response = await apiFetch(`${API_URL}/users/me/instruments`, {
       method: 'PUT',
       headers: {
