@@ -74,8 +74,11 @@ export default function UserProfileScreen() {
       });
 
       // Trust the server-returned counts instead of guessing at +1/-1 locally.
+      // isFollowed must be patched here too — otherwise the `useEffect` above
+      // resyncs `isFollowed` from this stale cached value on the next render
+      // and immediately reverts the toggle.
       queryClient.setQueryData<User>(['users', userId], (old) =>
-        old ? { ...old, followersCount: result.followersCount } : old
+        old ? { ...old, followersCount: result.followersCount, isFollowed: result.isFollowing } : old
       );
       setIsFollowed(result.isFollowing);
       updateCurrentUser({ ...currentUser, followedCount: result.followingCount });
