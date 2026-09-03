@@ -142,7 +142,7 @@ export default function ProfileScreen() {
           !postsLoading && postsCount === 0 && (
             <View style={[styles.centerContent, {marginTop: 40}]}>
               <Text style={{color: COLORS.white, fontSize: 20}}>You haven&apos;t posted anything yet.</Text>
-              <AnimatedPressable style={{flexDirection: "row", marginTop: 20, alignItems: "center"}} onPress={() => router.navigate("/(app)/createPost")}>
+              <AnimatedPressable style={{flexDirection: "row", marginTop: 20, alignItems: "center"}} onPress={() => router.navigate("/(app)/create")}>
                 <Text style={{color: COLORS.lightBlueX2, fontSize: 18}}>
                   Create your first post!
                 </Text>

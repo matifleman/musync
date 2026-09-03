@@ -1,0 +1,32 @@
+import type { components } from './api'
+import type { Defined } from './apiTypeHelpers'
+import { Instrument } from './User.type'
+
+// profilePicture stays nullable — a freshly created band has none until the
+// separate picture upload call succeeds, unlike Post.image/User.profilePicture
+// which are always present.
+export type Band = Defined<Omit<components["schemas"]["BandDTO"], "profilePicture" | "genres" | "requiredInstruments" | "members" | "vacantInstruments">> & {
+  profilePicture: string | null
+  genres: Defined<components["schemas"]["GenreDTO"]>[]
+  requiredInstruments: Instrument[]
+  members: Defined<components["schemas"]["BandMemberDTO"]>[]
+  vacantInstruments: Instrument[]
+}
+
+export type CreateBandCommand = Defined<components["schemas"]["CreateBandCommand"]>
+
+export type BandSearchDTO = Defined<components["schemas"]["BandSearchDTO"]>
+
+export interface BandSearchResult {
+  id: number
+  name: string
+  memberCount: number
+}
+
+export function mapBandSearchDTOToSearchResult(dto: BandSearchDTO): BandSearchResult {
+  return {
+    id: dto.id,
+    name: dto.name,
+    memberCount: dto.memberCount,
+  }
+}

@@ -1,15 +1,18 @@
 import { COLORS } from '@/constants/Colors'
 import { useSession } from '@/contexts/AuthContext'
+import { useSearchBands } from '@/hooks/useSearchBands'
 import { useSearchUsers } from '@/hooks/useSearchUsers'
 import { usersService } from '@/services/usersService'
+import { BandSearchResult } from '@/types/Band.type'
 import { UserSearchResult } from '@/types/User.type'
+import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import { useQueryClient } from '@tanstack/react-query'
 import { router, useFocusEffect } from 'expo-router'
 import React, { useCallback, useEffect, useState } from 'react'
 import {
   ActivityIndicator,
-  FlatList,
   Image,
+  SectionList,
   StyleSheet,
   Text,
   TextInput,
@@ -19,6 +22,10 @@ import {
 import Toast from 'react-native-toast-message'
 
 const DEFAULT_AVATAR = require('@/assets/dummyImages/avatars/avatar0.jpg')
+
+type UserResultItem = UserSearchResult & { kind: 'user' }
+type BandResultItem = BandSearchResult & { kind: 'band' }
+type ResultItem = UserResultItem | BandResultItem
 
 export default function Search() {
   const { currentUser } = useSession()
@@ -36,7 +43,9 @@ export default function Search() {
     return () => clearTimeout(delayDebounce)
   }, [busqueda])
 
-  const { data: usuarios = [], isFetching: loading } = useSearchUsers(debouncedQuery)
+  const { data: usuarios = [], isFetching: loadingUsers } = useSearchUsers(debouncedQuery)
+  const { data: bandas = [], isFetching: loadingBands } = useSearchBands(debouncedQuery)
+  const loading = loadingUsers || loadingBands
 
   const toggleSeguir = async (usuario: UserSearchResult) => {
     if (!currentUser) {
@@ -90,7 +99,7 @@ export default function Search() {
     }, [])
   );
 
-  const renderUsuario = ({ item }: { item: UserSearchResult }) => {
+  const renderUsuario = (item: UserResultItem) => {
     const isProcessing = followingInProgress === item.id
     const avatarSource = item.foto ? { uri: item.foto } : DEFAULT_AVATAR
 
@@ -121,12 +130,34 @@ export default function Search() {
     )
   }
 
+  const renderBanda = (item: BandResultItem) => {
+    return (
+      <View style={styles.usuarioItem}>
+        <View style={styles.fotoBanda}>
+          <MaterialIcons name="library-music" size={24} color={COLORS.lightBlueX2} />
+        </View>
+
+        <View style={styles.infoUsuario}>
+          <Text style={styles.username}>{item.name}</Text>
+          <Text style={styles.followers}>{item.memberCount} members</Text>
+        </View>
+      </View>
+    )
+  }
+
+  const userItems: UserResultItem[] = usuarios.map((u) => ({ kind: 'user', ...u }))
+  const bandItems: BandResultItem[] = bandas.map((b) => ({ kind: 'band', ...b }))
+  const sections = [
+    { title: 'Users', data: userItems },
+    { title: 'Bands', data: bandItems },
+  ].filter((section) => section.data.length > 0)
+
   return (
     <View style={styles.container}>
       <View style={styles.searchContainer}>
         <TextInput
           style={styles.searchInput}
-          placeholder="Search users..."
+          placeholder="Search users or bands..."
           placeholderTextColor={COLORS.gray}
           value={busqueda}
           onChangeText={setBusqueda}
@@ -140,17 +171,18 @@ export default function Search() {
           <ActivityIndicator size="large" color={COLORS.white} />
         </View>
       ) : (
-        <FlatList
-          data={usuarios}
-          renderItem={renderUsuario}
-          keyExtractor={(item) => item.id.toString()}
+        <SectionList<ResultItem>
+          sections={sections}
+          renderItem={({ item }) => item.kind === 'user' ? renderUsuario(item) : renderBanda(item)}
+          renderSectionHeader={({ section }) => <Text style={styles.sectionHeader}>{section.title}</Text>}
+          keyExtractor={(item) => `${item.kind}-${item.id}`}
           contentContainerStyle={styles.listaContainer}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyText}>
                 {busqueda.trim().length > 0
-                  ? 'We haven\'t found any users'
-                  : 'Search users to follow'}
+                  ? 'We haven\'t found any users or bands'
+                  : 'Search for users or bands'}
               </Text>
             </View>
           }
@@ -199,6 +231,24 @@ const styles = StyleSheet.create({
     marginRight: 12,
     borderWidth: 2,
     borderColor: COLORS.white,
+  },
+  fotoBanda: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    marginRight: 12,
+    borderWidth: 2,
+    borderColor: COLORS.lightBlueX2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sectionHeader: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.gray,
+    backgroundColor: COLORS.black,
+    paddingTop: 12,
+    paddingBottom: 6,
   },
   infoUsuario: {
     flex: 1,

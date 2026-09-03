@@ -1,3 +1,4 @@
+import { Band } from "@/types/Band.type";
 import { Post } from "@/types/Post.type";
 
 export const resolveServerImageUrls = (posts: Post[]): Post[] => {
@@ -15,5 +16,12 @@ export const resolveUserProfilePictureUrl = <T extends { profilePicture: string 
   return {
     ...user,
     profilePicture: `${process.env.EXPO_PUBLIC_SERVER_URL}/${user.profilePicture}`
+  };
+}
+
+export const resolveBandProfilePictureUrl = (band: Band): Band => {
+  return {
+    ...band,
+    profilePicture: band.profilePicture ? `${process.env.EXPO_PUBLIC_SERVER_URL}/${band.profilePicture}` : null
   };
 }

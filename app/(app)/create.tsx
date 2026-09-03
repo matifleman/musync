@@ -187,7 +187,7 @@ export default function CreateScreen() {
           Toast.show({
             type: "error",
             text1: "Band created",
-            text2: "The picture could not be uploaded.",
+            text2: err instanceof Error ? err.message : "The picture could not be uploaded.",
           });
         }
       }
