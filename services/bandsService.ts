@@ -76,4 +76,32 @@ export const bandsService = {
     const data: UserBand[] = await response.json()
     return data.map(resolveUserBandProfilePictureUrl)
   },
+
+  async joinBand(bandId: number, instrumentId: number): Promise<Band> {
+    const response = await apiFetch(`${API_URL}/bands/${bandId}/join`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ instrumentId }),
+    })
+
+    if (!response.ok) {
+      throw new Error(`Failed to join band: ${response.status}`)
+    }
+
+    const data: Band = await response.json()
+    return resolveBandProfilePictureUrl(data)
+  },
+
+  async leaveBand(bandId: number): Promise<Band> {
+    const response = await apiFetch(`${API_URL}/bands/${bandId}/membership`, { method: 'DELETE' })
+
+    if (!response.ok) {
+      throw new Error(`Failed to leave band: ${response.status}`)
+    }
+
+    const data: Band = await response.json()
+    return resolveBandProfilePictureUrl(data)
+  },
 }

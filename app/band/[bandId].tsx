@@ -31,6 +31,8 @@ export default function BandProfileScreen() {
 
   const [isFollowed, setIsFollowed] = useState<boolean>(false)
   const [isLoadingFollow, setIsLoadingFollow] = useState(false)
+  const [joiningInstrumentId, setJoiningInstrumentId] = useState<number | null>(null)
+  const [isLeavingBand, setIsLeavingBand] = useState(false)
 
   const { data: band, isLoading, error, refetch } = useBandProfile(bandId)
 
@@ -77,6 +79,58 @@ export default function BandProfileScreen() {
     }
   }
 
+  const handleJoin = async (instrumentId: number, instrumentName: string) => {
+    if (!band) return
+    try {
+      setJoiningInstrumentId(instrumentId)
+
+      const updatedBand = await bandsService.joinBand(band.id, instrumentId)
+
+      Toast.show({
+        type: 'success',
+        text1: 'Joined the band',
+        text2: instrumentName,
+      })
+
+      queryClient.setQueryData<Band>(['bands', bandId], updatedBand)
+    } catch (error) {
+      console.error('Error joining band:', error)
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Could not complete the action',
+      })
+    } finally {
+      setJoiningInstrumentId(null)
+    }
+  }
+
+  const handleLeave = async () => {
+    if (!band) return
+    try {
+      setIsLeavingBand(true)
+
+      const updatedBand = await bandsService.leaveBand(band.id)
+
+      Toast.show({
+        type: 'success',
+        text1: "You've left the band",
+        text2: band.name,
+      })
+
+      queryClient.setQueryData<Band>(['bands', bandId], updatedBand)
+    } catch (error) {
+      console.error('Error leaving band:', error)
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Could not complete the action',
+      })
+    } finally {
+      setIsLeavingBand(false)
+    }
+  }
+
   if (isLoading)
     return (
       <View style={[styles.screen, styles.center]}>
@@ -90,6 +144,8 @@ export default function BandProfileScreen() {
         <Text style={styles.errorText}>{error?.message || "Error desconocido"}</Text>
       </View>
     )
+
+  const isMember = band.members.some((m) => m.userId === currentUser?.id)
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.screenContent}>
@@ -140,6 +196,20 @@ export default function BandProfileScreen() {
               </Text>
             )}
           </TouchableOpacity>
+
+          {isMember && (
+            <TouchableOpacity
+              disabled={isLeavingBand}
+              onPress={handleLeave}
+              style={styles.leaveButton}
+            >
+              {isLeavingBand ? (
+                <ActivityIndicator color={COLORS.red} size="small" />
+              ) : (
+                <Text style={styles.leaveButtonText}>Leave band</Text>
+              )}
+            </TouchableOpacity>
+          )}
         </View>
       </View>
 
@@ -160,6 +230,18 @@ export default function BandProfileScreen() {
               </View>
               {members.length > 0 ? (
                 <Text style={styles.memberName}>{members.map((m) => m.userName).join(', ')}</Text>
+              ) : !isMember ? (
+                <TouchableOpacity
+                  disabled={joiningInstrumentId === instrument.id}
+                  onPress={() => handleJoin(instrument.id, instrument.name)}
+                  style={styles.joinButton}
+                >
+                  {joiningInstrumentId === instrument.id ? (
+                    <ActivityIndicator color={COLORS.lightBlueX2} size="small" />
+                  ) : (
+                    <Text style={styles.joinButtonText}>Join</Text>
+                  )}
+                </TouchableOpacity>
               ) : (
                 <Text style={styles.vacantText}>Vacant</Text>
               )}
@@ -239,6 +321,7 @@ const styles = StyleSheet.create({
   actionRow: {
     flexDirection: "row",
     marginTop: 12,
+    gap: 8,
   },
   followButton: {
     flex: 1,
@@ -256,6 +339,19 @@ const styles = StyleSheet.create({
   },
   followButtonText: {
     color: COLORS.white,
+    fontWeight: "600",
+  },
+  leaveButton: {
+    borderRadius: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: COLORS.red,
+  },
+  leaveButtonText: {
+    color: COLORS.red,
     fontWeight: "600",
   },
   instrumentsSection: {
@@ -293,6 +389,20 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: COLORS.gray,
     fontStyle: "italic",
+  },
+  joinButton: {
+    borderRadius: 6,
+    paddingVertical: 4,
+    paddingHorizontal: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: COLORS.lightBlueX2,
+  },
+  joinButtonText: {
+    color: COLORS.lightBlueX2,
+    fontWeight: "600",
+    fontSize: 13,
   },
   errorText: {
     color: COLORS.white,
