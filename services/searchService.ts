@@ -5,13 +5,19 @@ import { apiFetch } from '@/utilities/api'
 const API_URL = process.env.EXPO_PUBLIC_API_URL
 
 export const searchService = {
-  async searchUsers(query: string, session?: string | null): Promise<UserSearchResult[]> {
+  async searchUsers(query: string, pageNumber: number = 1, pageSize: number = 20): Promise<UserSearchResult[]> {
     if (!query || query.trim().length === 0) {
       return []
     }
 
     try {
-      const response = await apiFetch(`${API_URL}/users/search?q=${encodeURIComponent(query)}`, {
+      const params = new URLSearchParams({
+        q: query,
+        pageNumber: String(pageNumber),
+        pageSize: String(pageSize),
+      })
+
+      const response = await apiFetch(`${API_URL}/users/search?${params.toString()}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -30,13 +36,27 @@ export const searchService = {
     }
   },
 
-  async searchBands(query: string): Promise<BandSearchResult[]> {
+  async searchBands(
+    query: string,
+    pageNumber: number = 1,
+    pageSize: number = 20,
+    instrumentId?: number,
+    genreId?: number
+  ): Promise<BandSearchResult[]> {
     if (!query || query.trim().length === 0) {
       return []
     }
 
     try {
-      const response = await apiFetch(`${API_URL}/bands/search?q=${encodeURIComponent(query)}`, {
+      const params = new URLSearchParams({
+        q: query,
+        pageNumber: String(pageNumber),
+        pageSize: String(pageSize),
+      })
+      if (instrumentId !== undefined) params.set('instrumentId', String(instrumentId))
+      if (genreId !== undefined) params.set('genreId', String(genreId))
+
+      const response = await apiFetch(`${API_URL}/bands/search?${params.toString()}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
