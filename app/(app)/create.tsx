@@ -1,10 +1,13 @@
 import { AnimatedPressable } from "@/components/AnimatedPressable";
+import GenreBadges from "@/components/GenreBadges";
 import InstrumentBadges from "@/components/InstrumentBadges";
+import SelectGenresModal from "@/components/SelectGenresModal";
 import SelectInstrumentsModal from "@/components/SelectInstrumentsModal";
 import { COLORS } from "@/constants/Colors";
 import { FONTS } from "@/constants/Fonts";
 import { bandsService } from "@/services/bandsService";
 import { postsService } from "@/services/postsService";
+import { Genre } from "@/types/Band.type";
 import { Instrument } from "@/types/User.type";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -54,6 +57,8 @@ export default function CreateScreen() {
   const [bandPictureUri, setBandPictureUri] = useState<string | null>(null);
   const [selectedInstruments, setSelectedInstruments] = useState<Instrument[]>([]);
   const [instrumentsModalVisible, setInstrumentsModalVisible] = useState(false);
+  const [selectedGenres, setSelectedGenres] = useState<Genre[]>([]);
+  const [genresModalVisible, setGenresModalVisible] = useState(false);
   const [loading, setLoading] = useState<boolean>(false);
 
   const router = useRouter();
@@ -121,6 +126,7 @@ export default function CreateScreen() {
       resetBandForm({ name: "", instrumentIds: [] });
       setBandPictureUri(null);
       setSelectedInstruments([]);
+      setSelectedGenres([]);
       setMode("post");
       setLoading(false);
     }
@@ -132,6 +138,7 @@ export default function CreateScreen() {
       resetBandForm({ name: "", instrumentIds: [] });
       setBandPictureUri(null);
       setSelectedInstruments([]);
+      setSelectedGenres([]);
       setMode("post");
       setLoading(false);
     };
@@ -192,7 +199,20 @@ export default function CreateScreen() {
         }
       }
 
-      router.back();
+      if (selectedGenres.length > 0) {
+        try {
+          await bandsService.updateBandGenres(band.id, selectedGenres.map((g) => g.id));
+        } catch (err) {
+          console.error("Error setting band genres:", err);
+          Toast.show({
+            type: "error",
+            text1: "Band created",
+            text2: err instanceof Error ? err.message : "The genres could not be saved.",
+          });
+        }
+      }
+
+      router.push(`/band/${band.id}`);
     } catch (err) {
       console.error("Error creating band:", err);
       Toast.show({
@@ -313,6 +333,14 @@ export default function CreateScreen() {
           </AnimatedPressable>
           <InstrumentBadges instruments={selectedInstruments} />
           {bandErrors.instrumentIds && <Text style={styles.error}>{bandErrors.instrumentIds.message}</Text>}
+
+          <AnimatedPressable
+            style={styles.selectInstrumentsButton}
+            onPress={() => setGenresModalVisible(true)}
+          >
+            <Text style={styles.selectInstrumentsText}>Select genres</Text>
+          </AnimatedPressable>
+          <GenreBadges genres={selectedGenres} />
         </ScrollView>
       )}
 
@@ -323,6 +351,15 @@ export default function CreateScreen() {
         onConfirm={(ids, instruments) => {
           setBandValue("instrumentIds", ids, { shouldValidate: true });
           setSelectedInstruments(instruments);
+        }}
+      />
+
+      <SelectGenresModal
+        visible={genresModalVisible}
+        selectedIds={selectedGenres.map((g) => g.id)}
+        onClose={() => setGenresModalVisible(false)}
+        onConfirm={(_ids, genres) => {
+          setSelectedGenres(genres);
         }}
       />
     </KeyboardAvoidingView>

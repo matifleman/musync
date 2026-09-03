@@ -132,7 +132,7 @@ export default function Search() {
 
   const renderBanda = (item: BandResultItem) => {
     return (
-      <View style={styles.usuarioItem}>
+      <TouchableOpacity style={styles.usuarioItem} onPress={() => router.push(`/band/${item.id}`)}>
         <View style={styles.fotoBanda}>
           <MaterialIcons name="library-music" size={24} color={COLORS.lightBlueX2} />
         </View>
@@ -141,7 +141,7 @@ export default function Search() {
           <Text style={styles.username}>{item.name}</Text>
           <Text style={styles.followers}>{item.memberCount} members</Text>
         </View>
-      </View>
+      </TouchableOpacity>
     )
   }
 

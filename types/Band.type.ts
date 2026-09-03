@@ -2,12 +2,14 @@ import type { components } from './api'
 import type { Defined } from './apiTypeHelpers'
 import { Instrument } from './User.type'
 
+export type Genre = Defined<components["schemas"]["GenreDTO"]>
+
 // profilePicture stays nullable — a freshly created band has none until the
 // separate picture upload call succeeds, unlike Post.image/User.profilePicture
 // which are always present.
 export type Band = Defined<Omit<components["schemas"]["BandDTO"], "profilePicture" | "genres" | "requiredInstruments" | "members" | "vacantInstruments">> & {
   profilePicture: string | null
-  genres: Defined<components["schemas"]["GenreDTO"]>[]
+  genres: Genre[]
   requiredInstruments: Instrument[]
   members: Defined<components["schemas"]["BandMemberDTO"]>[]
   vacantInstruments: Instrument[]
@@ -30,3 +32,5 @@ export function mapBandSearchDTOToSearchResult(dto: BandSearchDTO): BandSearchRe
     memberCount: dto.memberCount,
   }
 }
+
+export type BandFollowResult = Defined<components["schemas"]["BandFollowResultDTO"]>

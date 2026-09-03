@@ -1,10 +1,29 @@
-import type { Band, CreateBandCommand } from '@/types/Band.type'
+import type { Band, BandFollowResult, CreateBandCommand } from '@/types/Band.type'
 import { apiFetch } from '@/utilities/api'
 import { resolveBandProfilePictureUrl } from '@/utilities/resolverServerImageUrls'
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL
 
 export const bandsService = {
+  async getBand(bandId: number | string): Promise<Band> {
+    const response = await apiFetch(`${API_URL}/bands/${bandId}`)
+    if (!response.ok) throw new Error(`Failed to fetch band: ${response.status}`)
+    const data: Band = await response.json()
+    return resolveBandProfilePictureUrl(data)
+  },
+
+  async followBand(bandId: number): Promise<BandFollowResult> {
+    const response = await apiFetch(`${API_URL}/bands/${bandId}/follow`, { method: 'POST' })
+    if (!response.ok) throw new Error(`Failed to follow band: ${response.status}`)
+    return response.json()
+  },
+
+  async unfollowBand(bandId: number): Promise<BandFollowResult> {
+    const response = await apiFetch(`${API_URL}/bands/${bandId}/follow`, { method: 'DELETE' })
+    if (!response.ok) throw new Error(`Failed to unfollow band: ${response.status}`)
+    return response.json()
+  },
+
   async createBand(command: CreateBandCommand): Promise<Band> {
     const response = await apiFetch(`${API_URL}/bands`, {
       method: 'POST',
@@ -33,5 +52,21 @@ export const bandsService = {
 
     const data: Band = await response.json()
     return resolveBandProfilePictureUrl(data)
+  },
+
+  async updateBandGenres(bandId: number, genreIds: number[]): Promise<Band> {
+    const response = await apiFetch(`${API_URL}/bands/${bandId}/genres`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ genreIds }),
+    })
+
+    if (!response.ok) {
+      throw new Error(`Failed to update band genres: ${response.status}`)
+    }
+
+    return response.json()
   },
 }
