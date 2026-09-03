@@ -3,8 +3,10 @@ import EditInstrumentsModal from "@/components/EditInstrumentsModal"
 import InstrumentBadges from "@/components/InstrumentBadges"
 import PostModal from "@/components/PostModal"
 import Stat from "@/components/Stat"
+import UserBandsList from "@/components/UserBandsList"
 import { COLORS } from '@/constants/Colors'
 import { useSession } from '@/contexts/AuthContext'
+import { useUserBands } from "@/hooks/useUserBands"
 import { useUserPosts } from "@/hooks/useUserPosts"
 import { usersService } from "@/services/usersService"
 import { Post as PostType } from '@/types/Post.type'
@@ -45,11 +47,13 @@ export default function ProfileScreen() {
   )
 
   const { data: posts = [], isLoading: postsLoading, refetch: refetchPosts } = useUserPosts(user?.id)
+  const { data: bands = [], refetch: refetchBands } = useUserBands(user?.id)
 
   useFocusEffect(
     useCallback(() => {
       refetchPosts()
-    }, [refetchPosts])
+      refetchBands()
+    }, [refetchPosts, refetchBands])
   )
 
   const handleUpdateAvatar = async () => {
@@ -138,11 +142,13 @@ export default function ProfileScreen() {
           </View>
         </View>
 
+        <UserBandsList bands={bands} />
+
         {
           !postsLoading && postsCount === 0 && (
             <View style={[styles.centerContent, {marginTop: 40}]}>
               <Text style={{color: COLORS.white, fontSize: 20}}>You haven&apos;t posted anything yet.</Text>
-              <AnimatedPressable style={{flexDirection: "row", marginTop: 20, alignItems: "center"}} onPress={() => router.navigate("/(app)/createPost")}>
+              <AnimatedPressable style={{flexDirection: "row", marginTop: 20, alignItems: "center"}} onPress={() => router.navigate("/(app)/create")}>
                 <Text style={{color: COLORS.lightBlueX2, fontSize: 18}}>
                   Create your first post!
                 </Text>

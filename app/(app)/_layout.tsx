@@ -14,6 +14,7 @@ export default function AppLayout() {
         headerShown: false,
         tabBarShowLabel: false,
         tabBarActiveTintColor: COLORS.lightBlueX2,
+        tabBarInactiveTintColor: COLORS.gray,
         sceneStyle: { backgroundColor: COLORS.black },
         tabBarStyle: { backgroundColor: COLORS.black, elevation: 0, height: 40},
       }}
@@ -24,7 +25,7 @@ export default function AppLayout() {
       <Tabs.Screen name="search" options={{
         tabBarIcon: ({color}) => <FontAwesome name="search" color={color} size={iconSize} /> 
       }} />
-      <Tabs.Screen name="createPost" options={{
+      <Tabs.Screen name="create" options={{
         tabBarIcon: ({color}) => <MaterialIcons name="add-circle" color={color} size={iconSize} /> 
       }} />
       <Tabs.Screen name="profile" options={{
