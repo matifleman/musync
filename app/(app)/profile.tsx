@@ -3,8 +3,10 @@ import EditInstrumentsModal from "@/components/EditInstrumentsModal"
 import InstrumentBadges from "@/components/InstrumentBadges"
 import PostModal from "@/components/PostModal"
 import Stat from "@/components/Stat"
+import UserBandsList from "@/components/UserBandsList"
 import { COLORS } from '@/constants/Colors'
 import { useSession } from '@/contexts/AuthContext'
+import { useUserBands } from "@/hooks/useUserBands"
 import { useUserPosts } from "@/hooks/useUserPosts"
 import { usersService } from "@/services/usersService"
 import { Post as PostType } from '@/types/Post.type'
@@ -45,11 +47,13 @@ export default function ProfileScreen() {
   )
 
   const { data: posts = [], isLoading: postsLoading, refetch: refetchPosts } = useUserPosts(user?.id)
+  const { data: bands = [], refetch: refetchBands } = useUserBands(user?.id)
 
   useFocusEffect(
     useCallback(() => {
       refetchPosts()
-    }, [refetchPosts])
+      refetchBands()
+    }, [refetchPosts, refetchBands])
   )
 
   const handleUpdateAvatar = async () => {
@@ -137,6 +141,8 @@ export default function ProfileScreen() {
             </TouchableOpacity>
           </View>
         </View>
+
+        <UserBandsList bands={bands} />
 
         {
           !postsLoading && postsCount === 0 && (

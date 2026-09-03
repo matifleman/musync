@@ -1,4 +1,4 @@
-import { Band } from "@/types/Band.type";
+import { Band, UserBand } from "@/types/Band.type";
 import { Post } from "@/types/Post.type";
 
 export const resolveServerImageUrls = (posts: Post[]): Post[] => {
@@ -20,6 +20,13 @@ export const resolveUserProfilePictureUrl = <T extends { profilePicture: string 
 }
 
 export const resolveBandProfilePictureUrl = (band: Band): Band => {
+  return {
+    ...band,
+    profilePicture: band.profilePicture ? `${process.env.EXPO_PUBLIC_SERVER_URL}/${band.profilePicture}` : null
+  };
+}
+
+export const resolveUserBandProfilePictureUrl = (band: UserBand): UserBand => {
   return {
     ...band,
     profilePicture: band.profilePicture ? `${process.env.EXPO_PUBLIC_SERVER_URL}/${band.profilePicture}` : null

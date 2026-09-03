@@ -2,8 +2,10 @@ import { AnimatedPressable } from "@/components/AnimatedPressable"
 import InstrumentBadges from "@/components/InstrumentBadges"
 import PostModal from "@/components/PostModal"
 import Stat from "@/components/Stat"
+import UserBandsList from "@/components/UserBandsList"
 import { COLORS } from "@/constants/Colors"
 import { useSession } from "@/contexts/AuthContext"
+import { useUserBands } from "@/hooks/useUserBands"
 import { useUserPosts } from "@/hooks/useUserPosts"
 import { useUserProfile } from "@/hooks/useUserProfile"
 import { usersService } from "@/services/usersService"
@@ -43,6 +45,7 @@ export default function UserProfileScreen() {
 
   const { data: user, isLoading, error, refetch: refetchProfile } = useUserProfile(userId)
   const { data: posts = [], refetch: refetchPosts } = useUserPosts(userId ? Number(userId) : undefined)
+  const { data: bands = [], refetch: refetchBands } = useUserBands(userId ? Number(userId) : undefined)
 
   // Seed the local follow toggle from the fetched profile whenever it (re)loads.
   useEffect(() => {
@@ -54,8 +57,9 @@ export default function UserProfileScreen() {
       if (userId) {
         refetchProfile()
         refetchPosts()
+        refetchBands()
       }
-    }, [userId, refetchProfile, refetchPosts])
+    }, [userId, refetchProfile, refetchPosts, refetchBands])
   )
 
   const handleFollowToggle = async () => {
@@ -169,6 +173,8 @@ export default function UserProfileScreen() {
             </TouchableOpacity>
           </View>
         </View>
+
+        <UserBandsList bands={bands} />
 
         {
           posts.length === 0 && (

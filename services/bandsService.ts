@@ -1,6 +1,6 @@
-import type { Band, BandFollowResult, CreateBandCommand } from '@/types/Band.type'
+import type { Band, BandFollowResult, CreateBandCommand, UserBand } from '@/types/Band.type'
 import { apiFetch } from '@/utilities/api'
-import { resolveBandProfilePictureUrl } from '@/utilities/resolverServerImageUrls'
+import { resolveBandProfilePictureUrl, resolveUserBandProfilePictureUrl } from '@/utilities/resolverServerImageUrls'
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL
 
@@ -68,5 +68,12 @@ export const bandsService = {
     }
 
     return response.json()
+  },
+
+  async getBandsByUser(userId: number | string): Promise<UserBand[]> {
+    const response = await apiFetch(`${API_URL}/bands/user/${userId}`)
+    if (!response.ok) throw new Error(`Failed to fetch user's bands: ${response.status}`)
+    const data: UserBand[] = await response.json()
+    return data.map(resolveUserBandProfilePictureUrl)
   },
 }
