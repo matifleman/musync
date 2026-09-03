@@ -104,4 +104,49 @@ export const bandsService = {
     const data: Band = await response.json()
     return resolveBandProfilePictureUrl(data)
   },
+
+  async updateBandName(bandId: number, name: string): Promise<Band> {
+    const response = await apiFetch(`${API_URL}/bands/${bandId}/name`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ name }),
+    })
+
+    if (!response.ok) {
+      throw new Error(`Failed to update band name: ${response.status}`)
+    }
+
+    const data: Band = await response.json()
+    return resolveBandProfilePictureUrl(data)
+  },
+
+  async updateBandInstruments(bandId: number, instrumentIds: number[]): Promise<Band> {
+    const response = await apiFetch(`${API_URL}/bands/${bandId}/instruments`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ instrumentIds }),
+    })
+
+    if (!response.ok) {
+      throw new Error(`Failed to update band instruments: ${response.status}`)
+    }
+
+    const data: Band = await response.json()
+    return resolveBandProfilePictureUrl(data)
+  },
+
+  async removeMember(bandId: number, userId: number): Promise<Band> {
+    const response = await apiFetch(`${API_URL}/bands/${bandId}/members/${userId}`, { method: 'DELETE' })
+
+    if (!response.ok) {
+      throw new Error(`Failed to remove member: ${response.status}`)
+    }
+
+    const data: Band = await response.json()
+    return resolveBandProfilePictureUrl(data)
+  },
 }

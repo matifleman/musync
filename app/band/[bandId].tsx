@@ -33,6 +33,7 @@ export default function BandProfileScreen() {
   const [isLoadingFollow, setIsLoadingFollow] = useState(false)
   const [joiningInstrumentId, setJoiningInstrumentId] = useState<number | null>(null)
   const [isLeavingBand, setIsLeavingBand] = useState(false)
+  const [removingMemberId, setRemovingMemberId] = useState<number | null>(null)
 
   const { data: band, isLoading, error, refetch } = useBandProfile(bandId)
 
@@ -131,6 +132,32 @@ export default function BandProfileScreen() {
     }
   }
 
+  const handleRemoveMember = async (userId: number, userName: string) => {
+    if (!band) return
+    try {
+      setRemovingMemberId(userId)
+
+      const updatedBand = await bandsService.removeMember(band.id, userId)
+
+      Toast.show({
+        type: 'success',
+        text1: 'Member removed',
+        text2: userName,
+      })
+
+      queryClient.setQueryData<Band>(['bands', bandId], updatedBand)
+    } catch (error) {
+      console.error('Error removing member:', error)
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Could not complete the action',
+      })
+    } finally {
+      setRemovingMemberId(null)
+    }
+  }
+
   if (isLoading)
     return (
       <View style={[styles.screen, styles.center]}>
@@ -146,6 +173,7 @@ export default function BandProfileScreen() {
     )
 
   const isMember = band.members.some((m) => m.userId === currentUser?.id)
+  const isLeader = band.createdById === currentUser?.id
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.screenContent}>
@@ -155,6 +183,11 @@ export default function BandProfileScreen() {
           <MaterialIcons name="arrow-back" size={24} color={COLORS.lightBlueX2} />
         </AnimatedPressable>
         <Text style={styles.headerTitle}>{band.name}</Text>
+        {isLeader && (
+          <AnimatedPressable style={styles.editButton} onPress={() => router.push(`/band/edit/${band.id}`)}>
+            <MaterialIcons name="edit" size={22} color={COLORS.lightBlueX2} />
+          </AnimatedPressable>
+        )}
       </View>
 
       {/* Avatar + stats */}
@@ -229,7 +262,29 @@ export default function BandProfileScreen() {
                 <Text style={styles.instrumentName}>{instrument.name}</Text>
               </View>
               {members.length > 0 ? (
-                <Text style={styles.memberName}>{members.map((m) => m.userName).join(', ')}</Text>
+                isLeader ? (
+                  <View style={styles.membersList}>
+                    {members.map((m) => (
+                      <View key={m.userId} style={styles.memberRow}>
+                        <Text style={styles.memberName}>{m.userName}</Text>
+                        {m.userId !== currentUser?.id && (
+                          <TouchableOpacity
+                            disabled={removingMemberId === m.userId}
+                            onPress={() => handleRemoveMember(m.userId, m.userName)}
+                          >
+                            {removingMemberId === m.userId ? (
+                              <ActivityIndicator color={COLORS.red} size="small" />
+                            ) : (
+                              <MaterialIcons name="close" size={16} color={COLORS.red} />
+                            )}
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    ))}
+                  </View>
+                ) : (
+                  <Text style={styles.memberName}>{members.map((m) => m.userName).join(', ')}</Text>
+                )
               ) : !isMember ? (
                 <TouchableOpacity
                   disabled={joiningInstrumentId === instrument.id}
@@ -281,6 +336,9 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: COLORS.white,
     marginHorizontal: "auto",
+  },
+  editButton: {
+    marginRight: 12,
   },
   topBlock: {
     flexDirection: "row",
@@ -384,6 +442,15 @@ const styles = StyleSheet.create({
   memberName: {
     fontSize: 14,
     color: COLORS.lightBlueX2,
+  },
+  membersList: {
+    alignItems: "flex-end",
+    gap: 6,
+  },
+  memberRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
   },
   vacantText: {
     fontSize: 14,
