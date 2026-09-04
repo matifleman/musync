@@ -6,6 +6,7 @@ import UserBandsList from "@/components/UserBandsList"
 import { COLORS } from "@/constants/Colors"
 import { useSession } from "@/contexts/AuthContext"
 import { useUserBands } from "@/hooks/useUserBands"
+import { useUserFollowedBandsCount } from "@/hooks/useUserFollowedBandsCount"
 import { useUserPosts } from "@/hooks/useUserPosts"
 import { useUserProfile } from "@/hooks/useUserProfile"
 import { usersService } from "@/services/usersService"
@@ -46,6 +47,7 @@ export default function UserProfileScreen() {
   const { data: user, isLoading, error, refetch: refetchProfile } = useUserProfile(userId)
   const { data: posts = [], refetch: refetchPosts } = useUserPosts(userId ? Number(userId) : undefined)
   const { data: bands = [], refetch: refetchBands } = useUserBands(userId ? Number(userId) : undefined)
+  const { data: followedBandsCount, refetch: refetchFollowedBandsCount } = useUserFollowedBandsCount(userId ? Number(userId) : undefined)
 
   // Seed the local follow toggle from the fetched profile whenever it (re)loads.
   useEffect(() => {
@@ -58,8 +60,9 @@ export default function UserProfileScreen() {
         refetchProfile()
         refetchPosts()
         refetchBands()
+        refetchFollowedBandsCount()
       }
-    }, [userId, refetchProfile, refetchPosts, refetchBands])
+    }, [userId, refetchProfile, refetchPosts, refetchBands, refetchFollowedBandsCount])
   )
 
   const handleFollowToggle = async () => {
@@ -142,9 +145,15 @@ export default function UserProfileScreen() {
           </View>
 
           <View style={styles.statsContainer}>
-            <Stat number={posts.length} label="Posts" />
-            <Stat number={user.followersCount} label="Followers" />
-            <Stat number={user.followedCount} label="Following" />
+            <AnimatedPressable onPress={() => router.push({ pathname: '/list/[listType]', params: { listType: 'bands', userId } })}>
+              <Stat number={followedBandsCount?.followedBandsCount ?? 0} label="Bands" />
+            </AnimatedPressable>
+            <AnimatedPressable onPress={() => router.push({ pathname: '/list/[listType]', params: { listType: 'followers', userId } })}>
+              <Stat number={user.followersCount} label="Followers" />
+            </AnimatedPressable>
+            <AnimatedPressable onPress={() => router.push({ pathname: '/list/[listType]', params: { listType: 'following', userId } })}>
+              <Stat number={user.followedCount} label="Following" />
+            </AnimatedPressable>
           </View>
         </View>
 

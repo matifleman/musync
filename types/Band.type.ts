@@ -35,10 +35,37 @@ export function mapBandSearchDTOToSearchResult(dto: BandSearchDTO): BandSearchRe
 
 export type BandFollowResult = Defined<components["schemas"]["BandFollowResultDTO"]>
 
+export type FollowedBandsCount = Defined<components["schemas"]["FollowedBandsCountDTO"]>
+
 // profilePicture/instrumentId/instrumentName stay nullable — a leader may have
 // no picture set on the band, and may not occupy an instrument slot themselves.
 export type UserBand = Defined<Omit<components["schemas"]["UserBandDTO"], "profilePicture" | "instrumentId" | "instrumentName">> & {
   profilePicture: string | null
   instrumentId: number | null
   instrumentName: string | null
+}
+
+export type FollowedBandDTO = Defined<Omit<components["schemas"]["FollowedBandDTO"], "profilePicture">> & {
+  profilePicture: string | null
+}
+
+export interface FollowedBandResult {
+  id: number
+  name: string
+  memberCount: number
+  profilePicture: string | null
+  // Client-side only: every item starts true (this is "bands I follow"), and
+  // is flipped locally after a follow/unfollow action — the DTO carries no
+  // per-item follow flag since it's implicitly true for the whole list.
+  isFollowing: boolean
+}
+
+export function mapFollowedBandDTOToResult(dto: FollowedBandDTO): FollowedBandResult {
+  return {
+    id: dto.id,
+    name: dto.name,
+    memberCount: dto.memberCount,
+    profilePicture: dto.profilePicture ? `${process.env.EXPO_PUBLIC_SERVER_URL}/${dto.profilePicture}` : null,
+    isFollowing: true,
+  }
 }
