@@ -191,7 +191,7 @@ export default function EditBandScreen() {
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={{ flex: 1 }}
+      style={styles.screen}
     >
       <View style={styles.header}>
         <AnimatedPressable onPress={() => router.back()}>
@@ -216,7 +216,7 @@ export default function EditBandScreen() {
           <Text style={styles.errorText}>{error?.message || "Error desconocido"}</Text>
         </View>
       ) : (
-        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+        <ScrollView style={styles.scroll} contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
           <AnimatedPressable style={styles.bandPicturePicker} onPress={pickPicture}>
             {pictureUri ? (
               <Image source={{ uri: pictureUri }} style={styles.bandPictureImage} />
@@ -285,6 +285,15 @@ export default function EditBandScreen() {
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: COLORS.darkBlue,
+  },
+
+  scroll: {
+    flex: 1,
+  },
+
   header: {
     flexDirection: "row",
     paddingHorizontal: 16,
