@@ -1,6 +1,6 @@
 import type { components } from '@/types/api'
 import type { Defined } from '@/types/apiTypeHelpers'
-import { CurrentUser, User } from '@/types/User.type'
+import { CurrentUser, mapUserSearchDTOToSearchResult, User, UserSearchDTO, UserSearchResult } from '@/types/User.type'
 import { apiFetch } from '@/utilities/api'
 import { resolveUserProfilePictureUrl } from '@/utilities/resolverServerImageUrls'
 
@@ -64,5 +64,21 @@ export const usersService = {
     const response = await apiFetch(`${API_URL}/follow/${userId}`, { method: 'DELETE' })
     if (!response.ok) throw new Error(`Failed to unfollow user: ${response.status}`)
     return response.json()
+  },
+
+  async getFollowers(userId: number | string, pageNumber = 1, pageSize = 20): Promise<UserSearchResult[]> {
+    const params = new URLSearchParams({ pageNumber: String(pageNumber), pageSize: String(pageSize) })
+    const response = await apiFetch(`${API_URL}/users/${userId}/followers?${params.toString()}`)
+    if (!response.ok) throw new Error(`Failed to fetch followers: ${response.status}`)
+    const dtos: UserSearchDTO[] = await response.json()
+    return dtos.map(mapUserSearchDTOToSearchResult)
+  },
+
+  async getFollowing(userId: number | string, pageNumber = 1, pageSize = 20): Promise<UserSearchResult[]> {
+    const params = new URLSearchParams({ pageNumber: String(pageNumber), pageSize: String(pageSize) })
+    const response = await apiFetch(`${API_URL}/users/${userId}/following?${params.toString()}`)
+    if (!response.ok) throw new Error(`Failed to fetch following: ${response.status}`)
+    const dtos: UserSearchDTO[] = await response.json()
+    return dtos.map(mapUserSearchDTOToSearchResult)
   },
 }

@@ -1,4 +1,5 @@
 import FilterChips from '@/components/FilterChips'
+import FollowButton from '@/components/FollowButton'
 import { COLORS } from '@/constants/Colors'
 import { useSession } from '@/contexts/AuthContext'
 import { useGenres } from '@/hooks/useGenres'
@@ -145,19 +146,11 @@ export default function Search() {
           <Text style={styles.followers}>{item.followersCount} followers</Text>
         </View>
 
-        <TouchableOpacity
-          style={[styles.botonSeguir, item.siguiendo && styles.botonSiguiendo]}
+        <FollowButton
+          following={item.siguiendo}
+          loading={isProcessing}
           onPress={() => toggleSeguir(item)}
-          disabled={isProcessing}
-        >
-          {isProcessing ? (
-            <ActivityIndicator size="small" color={COLORS.white} />
-          ) : (
-            <Text style={[styles.textoBoton, item.siguiendo && styles.textoSiguiendo]}>
-              {item.siguiendo ? 'Following' : 'Follow'}
-            </Text>
-          )}
-        </TouchableOpacity>
+        />
       </TouchableOpacity>
     )
   }
@@ -319,27 +312,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: COLORS.gray,
     marginTop: 2,
-  },
-  botonSeguir: {
-    borderWidth: 1,
-    borderColor: COLORS.lightBlueX2,
-    paddingHorizontal: 24,
-    paddingVertical: 8,
-    borderRadius: 6,
-    minWidth: 100,
-    alignItems: 'center',
-  },
-  botonSiguiendo: {
-    backgroundColor: COLORS.lightBlueX2,
-    borderColor: COLORS.lightBlueX2,
-  },
-  textoBoton: {
-    color: COLORS.white,
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  textoSiguiendo: {
-    color: COLORS.white,
   },
   emptyContainer: {
     alignItems: 'center',

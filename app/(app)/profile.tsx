@@ -104,9 +104,15 @@ export default function ProfileScreen() {
           </View>
 
           <View style={styles.statsContainer}>
-            <Stat number={followedBandsCount?.followedBandsCount ?? 0} label='Bands'/>
-            <Stat number={user.followersCount} label='Followers'/>
-            <Stat number={user.followedCount} label='Following'/>
+            <AnimatedPressable onPress={() => router.push({ pathname: '/profile/[listType]', params: { listType: 'bands' } })}>
+              <Stat number={followedBandsCount?.followedBandsCount ?? 0} label='Bands'/>
+            </AnimatedPressable>
+            <AnimatedPressable onPress={() => router.push({ pathname: '/profile/[listType]', params: { listType: 'followers' } })}>
+              <Stat number={user.followersCount} label='Followers'/>
+            </AnimatedPressable>
+            <AnimatedPressable onPress={() => router.push({ pathname: '/profile/[listType]', params: { listType: 'following' } })}>
+              <Stat number={user.followedCount} label='Following'/>
+            </AnimatedPressable>
           </View>
         </View>
 
