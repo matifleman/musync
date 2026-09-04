@@ -321,7 +321,8 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   botonSeguir: {
-    backgroundColor: '#0095f6',
+    borderWidth: 1,
+    borderColor: COLORS.lightBlueX2,
     paddingHorizontal: 24,
     paddingVertical: 8,
     borderRadius: 6,
@@ -329,9 +330,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   botonSiguiendo: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: '#ddd',
+    backgroundColor: COLORS.lightBlueX2,
+    borderColor: COLORS.lightBlueX2,
   },
   textoBoton: {
     color: COLORS.white,

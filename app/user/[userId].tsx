@@ -47,7 +47,7 @@ export default function UserProfileScreen() {
   const { data: user, isLoading, error, refetch: refetchProfile } = useUserProfile(userId)
   const { data: posts = [], refetch: refetchPosts } = useUserPosts(userId ? Number(userId) : undefined)
   const { data: bands = [], refetch: refetchBands } = useUserBands(userId ? Number(userId) : undefined)
-  const { data: followedBandsCount } = useUserFollowedBandsCount(userId ? Number(userId) : undefined)
+  const { data: followedBandsCount, refetch: refetchFollowedBandsCount } = useUserFollowedBandsCount(userId ? Number(userId) : undefined)
 
   // Seed the local follow toggle from the fetched profile whenever it (re)loads.
   useEffect(() => {
@@ -60,8 +60,9 @@ export default function UserProfileScreen() {
         refetchProfile()
         refetchPosts()
         refetchBands()
+        refetchFollowedBandsCount()
       }
-    }, [userId, refetchProfile, refetchPosts, refetchBands])
+    }, [userId, refetchProfile, refetchPosts, refetchBands, refetchFollowedBandsCount])
   )
 
   const handleFollowToggle = async () => {

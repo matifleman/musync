@@ -9,6 +9,7 @@ import { useSession } from '@/contexts/AuthContext'
 import { useUserBands } from "@/hooks/useUserBands"
 import { useUserFollowedBandsCount } from "@/hooks/useUserFollowedBandsCount"
 import { useUserPosts } from "@/hooks/useUserPosts"
+import { usersService } from "@/services/usersService"
 import { Post as PostType } from '@/types/Post.type'
 import { resolveUserProfilePictureUrl } from "@/utilities/resolverServerImageUrls"
 import Entypo from "@expo/vector-icons/Entypo"
@@ -34,7 +35,7 @@ const GRID_COLUMNS = 3
 const GRID_ITEM_SIZE = Math.floor((width - GRID_SPACING * (GRID_COLUMNS - 1)) / GRID_COLUMNS)
 
 export default function ProfileScreen() {
-  const { currentUser } = useSession()
+  const { currentUser, updateCurrentUser } = useSession()
   const [selectedPost, setSelectedPost] = useState<PostType | null>(null)
   const [isModalVisible, setIsModalVisible] = useState(false)
   const [isMenuVisible, setIsMenuVisible] = useState(false)
@@ -48,13 +49,20 @@ export default function ProfileScreen() {
 
   const { data: posts = [], isLoading: postsLoading, refetch: refetchPosts } = useUserPosts(user?.id)
   const { data: bands = [], refetch: refetchBands } = useUserBands(user?.id)
-  const { data: followedBandsCount } = useUserFollowedBandsCount(user?.id)
+  const { data: followedBandsCount, refetch: refetchFollowedBandsCount } = useUserFollowedBandsCount(user?.id)
 
   useFocusEffect(
     useCallback(() => {
       refetchPosts()
       refetchBands()
-    }, [refetchPosts, refetchBands])
+      refetchFollowedBandsCount()
+      // Followers/following counts live on the session's currentUser, which
+      // nothing else refreshes on focus — only login/bootstrap or specific
+      // mutations (avatar/profile/instruments) update it.
+      usersService.getCurrentUser().then(updateCurrentUser).catch((err) => {
+        console.error("Error refreshing current user", err)
+      })
+    }, [refetchPosts, refetchBands, refetchFollowedBandsCount, updateCurrentUser])
   )
 
   const openPost = (post: PostType) => {

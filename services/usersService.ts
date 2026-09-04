@@ -21,6 +21,13 @@ export const usersService = {
     return resolveUserProfilePictureUrl(data)
   },
 
+  async getCurrentUser(): Promise<CurrentUser> {
+    const response = await apiFetch(`${API_URL}/users/me`)
+    if (!response.ok) throw new Error(`Failed to fetch current user: ${response.status}`)
+    const data: CurrentUser = await response.json()
+    return resolveUserProfilePictureUrl(data)
+  },
+
   async updateAvatar(formData: FormData): Promise<CurrentUser> {
     const response = await apiFetch(`${API_URL}/users/me/avatar`, {
       method: 'PUT',
