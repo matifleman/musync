@@ -2,6 +2,7 @@ import { AnimatedPressable } from "@/components/AnimatedPressable"
 import FollowButton from "@/components/FollowButton"
 import { COLORS } from "@/constants/Colors"
 import { useSession } from "@/contexts/AuthContext"
+import { useBandFollowers } from "@/hooks/useBandFollowers"
 import { useUserFollowedBands } from "@/hooks/useUserFollowedBands"
 import { useUserFollowers } from "@/hooks/useUserFollowers"
 import { useUserFollowing } from "@/hooks/useUserFollowing"
@@ -26,22 +27,29 @@ import Toast from "react-native-toast-message"
 
 const DEFAULT_AVATAR = require('@/assets/dummyImages/avatars/avatar0.jpg')
 
-type ListType = 'followers' | 'following' | 'bands'
+type ListType = 'followers' | 'following' | 'bands' | 'band-followers'
 
 const TITLES: Record<ListType, string> = {
   followers: 'Followers',
   following: 'Following',
   bands: 'Bands you follow',
+  'band-followers': 'Followers',
 }
 
 const EMPTY_MESSAGES: Record<ListType, string> = {
   followers: "No followers yet.",
   following: "Not following anyone yet.",
   bands: "Not following any bands yet.",
+  'band-followers': "No followers yet.",
 }
 
-export default function ProfileListScreen() {
-  const { listType: rawListType } = useLocalSearchParams<{ listType: string }>()
+export default function ListScreen() {
+  const { listType: rawListType, userId, bandId, bandName } = useLocalSearchParams<{
+    listType: string
+    userId?: string
+    bandId?: string
+    bandName?: string
+  }>()
   const listType = rawListType as ListType
   const { currentUser } = useSession()
   const queryClient = useQueryClient()
@@ -49,26 +57,33 @@ export default function ProfileListScreen() {
   const [processingUserId, setProcessingUserId] = useState<number | null>(null)
   const [processingBandId, setProcessingBandId] = useState<number | null>(null)
 
-  const followersQuery = useUserFollowers(listType === 'followers' ? currentUser?.id : undefined)
-  const followingQuery = useUserFollowing(listType === 'following' ? currentUser?.id : undefined)
-  const bandsQuery = useUserFollowedBands(listType === 'bands' ? currentUser?.id : undefined)
+  const targetUserId = userId ? Number(userId) : currentUser?.id
+  // Only the session user's own Bands/Followers/Following lists are interactive
+  // — anyone else's, and a band's followers list, are view-only (no per-item
+  // relationship info is available/desired for those).
+  const showFollowButton = listType !== 'band-followers' && (!userId || Number(userId) === currentUser?.id)
 
-  const isUserList = listType === 'followers' || listType === 'following'
-  const activeUserQuery = listType === 'followers' ? followersQuery : followingQuery
-  const userItems = isUserList ? (activeUserQuery.data?.pages.flat() ?? []) : []
-  const bandItems = listType === 'bands' ? (bandsQuery.data?.pages.flat() ?? []) : []
+  const followersQuery = useUserFollowers(listType === 'followers' ? targetUserId : undefined)
+  const followingQuery = useUserFollowing(listType === 'following' ? targetUserId : undefined)
+  const bandFollowersQuery = useBandFollowers(listType === 'band-followers' ? Number(bandId) : undefined)
+  const bandsQuery = useUserFollowedBands(listType === 'bands' ? targetUserId : undefined)
 
-  const isLoading = isUserList ? activeUserQuery.isLoading : bandsQuery.isLoading
-  const hasNextPage = isUserList ? activeUserQuery.hasNextPage : bandsQuery.hasNextPage
-  const isFetchingNextPage = isUserList ? activeUserQuery.isFetchingNextPage : bandsQuery.isFetchingNextPage
-  const fetchNextPage = isUserList ? activeUserQuery.fetchNextPage : bandsQuery.fetchNextPage
+  const isBandsList = listType === 'bands'
+  const activeUserQuery = listType === 'followers' ? followersQuery : listType === 'following' ? followingQuery : bandFollowersQuery
+  const userItems = !isBandsList ? (activeUserQuery.data?.pages.flat() ?? []) : []
+  const bandItems = isBandsList ? (bandsQuery.data?.pages.flat() ?? []) : []
+
+  const isLoading = isBandsList ? bandsQuery.isLoading : activeUserQuery.isLoading
+  const hasNextPage = isBandsList ? bandsQuery.hasNextPage : activeUserQuery.hasNextPage
+  const isFetchingNextPage = isBandsList ? bandsQuery.isFetchingNextPage : activeUserQuery.isFetchingNextPage
+  const fetchNextPage = isBandsList ? bandsQuery.fetchNextPage : activeUserQuery.fetchNextPage
 
   const handleEndReached = () => {
     if (hasNextPage && !isFetchingNextPage) fetchNextPage()
   }
 
   const toggleUserFollow = async (item: UserSearchResult) => {
-    if (!currentUser) return
+    if (!currentUser || !targetUserId) return
     try {
       setProcessingUserId(item.id)
       const result = item.siguiendo
@@ -82,7 +97,7 @@ export default function ProfileListScreen() {
       })
 
       queryClient.setQueryData<InfiniteData<UserSearchResult[]>>(
-        ['users', listType, currentUser.id],
+        ['users', listType, targetUserId],
         (old) => old ? {
           ...old,
           pages: old.pages.map((page) => page.map((u) =>
@@ -101,7 +116,7 @@ export default function ProfileListScreen() {
   }
 
   const toggleBandFollow = async (item: FollowedBandResult) => {
-    if (!currentUser) return
+    if (!currentUser || !targetUserId) return
     try {
       setProcessingBandId(item.id)
       const result = item.isFollowing
@@ -115,7 +130,7 @@ export default function ProfileListScreen() {
       })
 
       queryClient.setQueryData<InfiniteData<FollowedBandResult[]>>(
-        ['bands', 'user', currentUser.id, 'followed'],
+        ['bands', 'user', targetUserId, 'followed'],
         (old) => old ? {
           ...old,
           pages: old.pages.map((page) => page.map((b) =>
@@ -138,11 +153,13 @@ export default function ProfileListScreen() {
         <Text style={styles.username}>{item.username}</Text>
         <Text style={styles.subtitle}>{item.nombre}</Text>
       </View>
-      <FollowButton
-        following={item.siguiendo}
-        loading={processingUserId === item.id}
-        onPress={() => toggleUserFollow(item)}
-      />
+      {showFollowButton && (
+        <FollowButton
+          following={item.siguiendo}
+          loading={processingUserId === item.id}
+          onPress={() => toggleUserFollow(item)}
+        />
+      )}
     </TouchableOpacity>
   )
 
@@ -159,13 +176,19 @@ export default function ProfileListScreen() {
         <Text style={styles.username}>{item.name}</Text>
         <Text style={styles.subtitle}>{item.memberCount} members</Text>
       </View>
-      <FollowButton
-        following={item.isFollowing}
-        loading={processingBandId === item.id}
-        onPress={() => toggleBandFollow(item)}
-      />
+      {showFollowButton && (
+        <FollowButton
+          following={item.isFollowing}
+          loading={processingBandId === item.id}
+          onPress={() => toggleBandFollow(item)}
+        />
+      )}
     </TouchableOpacity>
   )
+
+  const title = listType === 'band-followers'
+    ? (bandName ? `Followers of ${bandName}` : TITLES[listType])
+    : TITLES[listType]
 
   return (
     <View style={styles.screen}>
@@ -173,14 +196,14 @@ export default function ProfileListScreen() {
         <AnimatedPressable style={styles.arrowBack} onPress={() => router.back()}>
           <MaterialIcons name="arrow-back" size={24} color={COLORS.lightBlueX2} />
         </AnimatedPressable>
-        <Text style={styles.headerTitle}>{TITLES[listType]}</Text>
+        <Text style={styles.headerTitle}>{title}</Text>
       </View>
 
       {isLoading ? (
         <View style={styles.center}>
           <ActivityIndicator size="large" color={COLORS.white} />
         </View>
-      ) : listType === 'bands' ? (
+      ) : isBandsList ? (
         <FlatList
           data={bandItems}
           keyExtractor={(item) => String(item.id)}

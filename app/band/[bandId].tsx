@@ -203,7 +203,9 @@ export default function BandProfileScreen() {
         </View>
 
         <View style={styles.statsContainer}>
-          <Stat number={band.followersCount} label="Followers" />
+          <AnimatedPressable onPress={() => router.push({ pathname: '/list/[listType]', params: { listType: 'band-followers', bandId: String(band.id), bandName: band.name } })}>
+            <Stat number={band.followersCount} label="Followers" />
+          </AnimatedPressable>
         </View>
       </View>
 

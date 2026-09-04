@@ -1,4 +1,5 @@
 import { mapFollowedBandDTOToResult, type Band, type BandFollowResult, type CreateBandCommand, type FollowedBandDTO, type FollowedBandResult, type FollowedBandsCount, type UserBand } from '@/types/Band.type'
+import { mapUserSearchDTOToSearchResult, type UserSearchDTO, type UserSearchResult } from '@/types/User.type'
 import { apiFetch } from '@/utilities/api'
 import { resolveBandProfilePictureUrl, resolveUserBandProfilePictureUrl } from '@/utilities/resolverServerImageUrls'
 
@@ -89,6 +90,14 @@ export const bandsService = {
     if (!response.ok) throw new Error(`Failed to fetch followed bands: ${response.status}`)
     const dtos: FollowedBandDTO[] = await response.json()
     return dtos.map(mapFollowedBandDTOToResult)
+  },
+
+  async getBandFollowers(bandId: number | string, pageNumber = 1, pageSize = 20): Promise<UserSearchResult[]> {
+    const params = new URLSearchParams({ pageNumber: String(pageNumber), pageSize: String(pageSize) })
+    const response = await apiFetch(`${API_URL}/bands/${bandId}/followers?${params.toString()}`)
+    if (!response.ok) throw new Error(`Failed to fetch band followers: ${response.status}`)
+    const dtos: UserSearchDTO[] = await response.json()
+    return dtos.map(mapUserSearchDTOToSearchResult)
   },
 
   async joinBand(bandId: number, instrumentId: number): Promise<Band> {
