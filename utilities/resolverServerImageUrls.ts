@@ -13,6 +13,7 @@ export const resolveServerImageUrls = (posts: Post[]): Post[] => {
 }
 
 export const resolveUserProfilePictureUrl = <T extends { profilePicture: string }>(user: T): T => {
+  if (/^https?:\/\//.test(user.profilePicture)) return user
   return {
     ...user,
     profilePicture: `${process.env.EXPO_PUBLIC_SERVER_URL}/${user.profilePicture}`

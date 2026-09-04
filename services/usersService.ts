@@ -11,6 +11,8 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL
 // one server-authoritative response instead of guessing at +1/-1 locally.
 export type FollowResult = Defined<components["schemas"]["FollowResultDTO"]>
 
+export type UpdateProfileRequest = Defined<components["schemas"]["UpdateProfileCommand"]>
+
 export const usersService = {
   async getUser(userId: number | string): Promise<User> {
     const response = await apiFetch(`${API_URL}/users/${userId}`)
@@ -25,6 +27,22 @@ export const usersService = {
       body: formData,
     })
     if (!response.ok) throw new Error(`Failed to update avatar: ${response.status}`)
+    const data: CurrentUser = await response.json()
+    return resolveUserProfilePictureUrl(data)
+  },
+
+  async updateProfile(payload: UpdateProfileRequest): Promise<CurrentUser> {
+    const response = await apiFetch(`${API_URL}/users/me/profile`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    })
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.title || errorData.message || `Failed to update profile: ${response.status}`)
+    }
     const data: CurrentUser = await response.json()
     return resolveUserProfilePictureUrl(data)
   },

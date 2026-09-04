@@ -1,18 +1,17 @@
 import { AnimatedPressable } from "@/components/AnimatedPressable"
-import EditInstrumentsModal from "@/components/EditInstrumentsModal"
 import InstrumentBadges from "@/components/InstrumentBadges"
 import PostModal from "@/components/PostModal"
+import ProfileMenu from "@/components/ProfileMenu"
 import Stat from "@/components/Stat"
 import UserBandsList from "@/components/UserBandsList"
 import { COLORS } from '@/constants/Colors'
 import { useSession } from '@/contexts/AuthContext'
 import { useUserBands } from "@/hooks/useUserBands"
 import { useUserPosts } from "@/hooks/useUserPosts"
-import { usersService } from "@/services/usersService"
 import { Post as PostType } from '@/types/Post.type'
 import { resolveUserProfilePictureUrl } from "@/utilities/resolverServerImageUrls"
 import Entypo from "@expo/vector-icons/Entypo"
-import * as ImagePicker from 'expo-image-picker'
+import MaterialIcons from "@expo/vector-icons/MaterialIcons"
 import { router, useFocusEffect } from "expo-router"
 import React, { useCallback, useMemo, useState } from 'react'
 import {
@@ -34,10 +33,10 @@ const GRID_COLUMNS = 3
 const GRID_ITEM_SIZE = Math.floor((width - GRID_SPACING * (GRID_COLUMNS - 1)) / GRID_COLUMNS)
 
 export default function ProfileScreen() {
-  const { currentUser, updateCurrentUser } = useSession()
+  const { currentUser } = useSession()
   const [selectedPost, setSelectedPost] = useState<PostType | null>(null)
   const [isModalVisible, setIsModalVisible] = useState(false)
-  const [isInstrumentsModalVisible, setIsInstrumentsModalVisible] = useState(false)
+  const [isMenuVisible, setIsMenuVisible] = useState(false)
 
   // The profile's own user is always just the session's currentUser — no need
   // for a separate local copy that could drift out of sync with it.
@@ -55,33 +54,6 @@ export default function ProfileScreen() {
       refetchBands()
     }, [refetchPosts, refetchBands])
   )
-
-  const handleUpdateAvatar = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-    });
-
-    if (!result.canceled && result.assets.length > 0) {
-      const image = result.assets[0];
-
-      const formData = new FormData();
-      formData.append("newAvatar", {
-        uri: image.uri,
-        name: "avatar.jpg",
-        type: "image/jpeg",
-      } as any);
-
-      try {
-        const updatedUser = await usersService.updateAvatar(formData);
-        updateCurrentUser(updatedUser);
-      } catch (err) {
-        console.error("Error uploading avatar", err);
-      }
-    }
-  }
 
   const openPost = (post: PostType) => {
     setSelectedPost(post)
@@ -110,13 +82,16 @@ export default function ProfileScreen() {
         {/* header */}
         <View style={styles.header}>
           <Text style={styles.headerTitle}>{user.userName}</Text>
+          <AnimatedPressable style={styles.moreButton} onPress={() => setIsMenuVisible(true)}>
+            <MaterialIcons name="more-vert" size={24} color={COLORS.lightBlueX2} />
+          </AnimatedPressable>
         </View>
 
         {/* top block: avatar + stats */}
         <View style={styles.topBlock}>
-          <TouchableOpacity onPress={handleUpdateAvatar} style={styles.avatarWrapper}>
+          <View style={styles.avatarWrapper}>
             <Image source={{uri: user.profilePicture}} style={styles.avatar} />
-          </TouchableOpacity>
+          </View>
 
           <View style={styles.statsContainer}>
             <Stat number={postsCount} label='Posts'/>
@@ -131,15 +106,6 @@ export default function ProfileScreen() {
           <Text style={styles.username}>@{user.userName}</Text>
           {/* Puedes agregar bio cuando tu backend lo tenga */}
           <InstrumentBadges instruments={user.favoriteInstruments ?? []} />
-
-          <View style={styles.actionRow}>
-            <TouchableOpacity style={styles.editButton} onPress={() => setIsInstrumentsModalVisible(true)}>
-              <Text style={styles.editButtonText}>Edit profile</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.moreButton}>
-              <Text style={styles.moreButtonText}>⋯</Text>
-            </TouchableOpacity>
-          </View>
         </View>
 
         <UserBandsList bands={bands} />
@@ -178,13 +144,10 @@ export default function ProfileScreen() {
         onClose={closePost}
       />
 
-      <EditInstrumentsModal
-        visible={isInstrumentsModalVisible}
-        currentInstruments={user.favoriteInstruments ?? []}
-        onClose={() => setIsInstrumentsModalVisible(false)}
-        onSaved={(updatedUser) => {
-          updateCurrentUser(updatedUser)
-        }}
+      <ProfileMenu
+        visible={isMenuVisible}
+        onClose={() => setIsMenuVisible(false)}
+        onEditProfile={() => router.push('/profile/edit')}
       />
     </>
   )
@@ -206,7 +169,7 @@ const styles = StyleSheet.create({
     height: 56,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: '#eee',
@@ -215,6 +178,9 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     color: COLORS.white
+  },
+  moreButton: {
+    padding: 4,
   },
   topBlock: {
     flexDirection: 'row',
@@ -257,38 +223,6 @@ const styles = StyleSheet.create({
     marginTop: 8,
     fontSize: 14,
     color: COLORS.gray,
-  },
-  actionRow: {
-    flexDirection: 'row',
-    marginTop: 12,
-    paddingHorizontal: 2,
-    height: 40
-  },
-  editButton: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 6,
-    paddingVertical: 8,
-    alignItems: 'center',
-    marginRight: 8,
-  },
-  editButtonText: {
-    fontWeight: '600',
-    color: COLORS.white,
-  },
-  moreButton: {
-    width: 44,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 6,
-    paddingVertical: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  moreButtonText: {
-    fontSize: 20,
-    color: COLORS.white,
   },
   postsGrid: {
     flexDirection: 'row',

@@ -1649,6 +1649,60 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/users/me/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["UpdateProfileCommand"];
+                    "text/json": components["schemas"]["UpdateProfileCommand"];
+                    "application/*+json": components["schemas"]["UpdateProfileCommand"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CurrentUserDTO"];
+                        "application/json": components["schemas"]["CurrentUserDTO"];
+                        "text/json": components["schemas"]["CurrentUserDTO"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1807,6 +1861,11 @@ export interface components {
         };
         UpdateInstrumentsCommand: {
             instrumentIds?: number[] | null;
+        };
+        UpdateProfileCommand: {
+            firstName?: string | null;
+            lastName?: string | null;
+            userName?: string | null;
         };
         UserBandDTO: {
             /** Format: int32 */
