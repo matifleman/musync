@@ -7,6 +7,7 @@ import UserBandsList from "@/components/UserBandsList"
 import { COLORS } from '@/constants/Colors'
 import { useSession } from '@/contexts/AuthContext'
 import { useUserBands } from "@/hooks/useUserBands"
+import { useUserFollowedBandsCount } from "@/hooks/useUserFollowedBandsCount"
 import { useUserPosts } from "@/hooks/useUserPosts"
 import { Post as PostType } from '@/types/Post.type'
 import { resolveUserProfilePictureUrl } from "@/utilities/resolverServerImageUrls"
@@ -47,6 +48,7 @@ export default function ProfileScreen() {
 
   const { data: posts = [], isLoading: postsLoading, refetch: refetchPosts } = useUserPosts(user?.id)
   const { data: bands = [], refetch: refetchBands } = useUserBands(user?.id)
+  const { data: followedBandsCount } = useUserFollowedBandsCount(user?.id)
 
   useFocusEffect(
     useCallback(() => {
@@ -94,7 +96,7 @@ export default function ProfileScreen() {
           </View>
 
           <View style={styles.statsContainer}>
-            <Stat number={postsCount} label='Posts'/>
+            <Stat number={followedBandsCount?.followedBandsCount ?? 0} label='Bands'/>
             <Stat number={user.followersCount} label='Followers'/>
             <Stat number={user.followedCount} label='Following'/>
           </View>

@@ -6,6 +6,7 @@ import UserBandsList from "@/components/UserBandsList"
 import { COLORS } from "@/constants/Colors"
 import { useSession } from "@/contexts/AuthContext"
 import { useUserBands } from "@/hooks/useUserBands"
+import { useUserFollowedBandsCount } from "@/hooks/useUserFollowedBandsCount"
 import { useUserPosts } from "@/hooks/useUserPosts"
 import { useUserProfile } from "@/hooks/useUserProfile"
 import { usersService } from "@/services/usersService"
@@ -46,6 +47,7 @@ export default function UserProfileScreen() {
   const { data: user, isLoading, error, refetch: refetchProfile } = useUserProfile(userId)
   const { data: posts = [], refetch: refetchPosts } = useUserPosts(userId ? Number(userId) : undefined)
   const { data: bands = [], refetch: refetchBands } = useUserBands(userId ? Number(userId) : undefined)
+  const { data: followedBandsCount } = useUserFollowedBandsCount(userId ? Number(userId) : undefined)
 
   // Seed the local follow toggle from the fetched profile whenever it (re)loads.
   useEffect(() => {
@@ -142,7 +144,7 @@ export default function UserProfileScreen() {
           </View>
 
           <View style={styles.statsContainer}>
-            <Stat number={posts.length} label="Posts" />
+            <Stat number={followedBandsCount?.followedBandsCount ?? 0} label="Bands" />
             <Stat number={user.followersCount} label="Followers" />
             <Stat number={user.followedCount} label="Following" />
           </View>

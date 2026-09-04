@@ -1,4 +1,4 @@
-import type { Band, BandFollowResult, CreateBandCommand, UserBand } from '@/types/Band.type'
+import type { Band, BandFollowResult, CreateBandCommand, FollowedBandsCount, UserBand } from '@/types/Band.type'
 import { apiFetch } from '@/utilities/api'
 import { resolveBandProfilePictureUrl, resolveUserBandProfilePictureUrl } from '@/utilities/resolverServerImageUrls'
 
@@ -75,6 +75,12 @@ export const bandsService = {
     if (!response.ok) throw new Error(`Failed to fetch user's bands: ${response.status}`)
     const data: UserBand[] = await response.json()
     return data.map(resolveUserBandProfilePictureUrl)
+  },
+
+  async getFollowedBandsCount(userId: number | string): Promise<FollowedBandsCount> {
+    const response = await apiFetch(`${API_URL}/bands/user/${userId}/followed-count`)
+    if (!response.ok) throw new Error(`Failed to fetch followed bands count: ${response.status}`)
+    return response.json()
   },
 
   async joinBand(bandId: number, instrumentId: number): Promise<Band> {

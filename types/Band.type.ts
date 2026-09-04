@@ -35,6 +35,8 @@ export function mapBandSearchDTOToSearchResult(dto: BandSearchDTO): BandSearchRe
 
 export type BandFollowResult = Defined<components["schemas"]["BandFollowResultDTO"]>
 
+export type FollowedBandsCount = Defined<components["schemas"]["FollowedBandsCountDTO"]>
+
 // profilePicture/instrumentId/instrumentName stay nullable — a leader may have
 // no picture set on the band, and may not occupy an instrument slot themselves.
 export type UserBand = Defined<Omit<components["schemas"]["UserBandDTO"], "profilePicture" | "instrumentId" | "instrumentName">> & {
