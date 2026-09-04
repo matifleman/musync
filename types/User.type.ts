@@ -1,17 +1,20 @@
 import type { components } from './api'
 import type { Defined } from './apiTypeHelpers'
+import type { Genre } from './Band.type'
 
 export type Instrument = Defined<components["schemas"]["InstrumentDTO"]>
 
 // Tipo principal del usuario (el que usas en tu app)
-export type User = Defined<Omit<components["schemas"]["UserDTO"], "favoriteInstruments">> & {
+export type User = Defined<Omit<components["schemas"]["UserDTO"], "favoriteInstruments" | "favoriteGenres">> & {
   favoriteInstruments: Instrument[]
+  favoriteGenres: Genre[]
 }
 
 // The authenticated user (includes email) — only used for responses about the
 // caller's own account: login/register/refresh, GET /users/me, PUT /users/me/*
-export type CurrentUser = Defined<Omit<components["schemas"]["CurrentUserDTO"], "favoriteInstruments">> & {
+export type CurrentUser = Defined<Omit<components["schemas"]["CurrentUserDTO"], "favoriteInstruments" | "favoriteGenres">> & {
   favoriteInstruments: Instrument[]
+  favoriteGenres: Genre[]
 }
 
 // Tipo para búsqueda de usuarios (viene del endpoint /api/users/search)
