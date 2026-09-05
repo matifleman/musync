@@ -1,5 +1,6 @@
 import { Band, UserBand } from "@/types/Band.type";
 import { Post } from "@/types/Post.type";
+import { ReleaseDetail, ReleaseListItem } from "@/types/Release.type";
 
 export const resolveServerImageUrls = (posts: Post[]): Post[] => {
   return posts.map((post: Post) => ({
@@ -31,5 +32,12 @@ export const resolveUserBandProfilePictureUrl = (band: UserBand): UserBand => {
   return {
     ...band,
     profilePicture: band.profilePicture ? `${process.env.EXPO_PUBLIC_SERVER_URL}/${band.profilePicture}` : null
+  };
+}
+
+export const resolveReleaseCoverUrl = <T extends ReleaseListItem | ReleaseDetail>(release: T): T => {
+  return {
+    ...release,
+    cover: release.cover ? `${process.env.EXPO_PUBLIC_SERVER_URL}/${release.cover}` : null
   };
 }
