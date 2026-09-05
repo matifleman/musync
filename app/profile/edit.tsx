@@ -1,11 +1,15 @@
 import { AnimatedPressable } from "@/components/AnimatedPressable";
+import GenreBadges from "@/components/GenreBadges";
 import InstrumentBadges from "@/components/InstrumentBadges";
+import SelectGenresModal from "@/components/SelectGenresModal";
 import SelectInstrumentsModal from "@/components/SelectInstrumentsModal";
 import { COLORS } from "@/constants/Colors";
 import { FONTS } from "@/constants/Fonts";
 import { useSession } from "@/contexts/AuthContext";
+import { genresService } from "@/services/genresService";
 import { instrumentsService } from "@/services/instrumentsService";
 import { usersService } from "@/services/usersService";
+import { Genre } from "@/types/Band.type";
 import { CurrentUser, Instrument } from "@/types/User.type";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -32,6 +36,7 @@ import { z } from "zod";
 
 const PICTURE_SIZE = 110;
 const MAX_INSTRUMENTS = 2;
+const MAX_GENRES = 2;
 
 const profileSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
@@ -55,6 +60,8 @@ export default function EditProfileScreen() {
   const [pictureChanged, setPictureChanged] = useState(false);
   const [selectedInstruments, setSelectedInstruments] = useState<Instrument[]>([]);
   const [instrumentsModalVisible, setInstrumentsModalVisible] = useState(false);
+  const [selectedGenres, setSelectedGenres] = useState<Genre[]>([]);
+  const [genresModalVisible, setGenresModalVisible] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const {
@@ -77,6 +84,7 @@ export default function EditProfileScreen() {
         userName: currentUser.userName ?? "",
       });
       setSelectedInstruments(currentUser.favoriteInstruments ?? []);
+      setSelectedGenres(currentUser.favoriteGenres ?? []);
       setPictureUri(currentUser.profilePicture);
       setHasInitialized(true);
     }
@@ -130,6 +138,16 @@ export default function EditProfileScreen() {
       } catch (err) {
         console.error("Error updating instruments:", err);
         failedFields.push("instruments");
+      }
+    }
+
+    if (!sameIds(selectedGenres.map((g) => g.id), (currentUser.favoriteGenres ?? []).map((g) => g.id))) {
+      anyChange = true;
+      try {
+        latestUser = await genresService.updateMyGenres(selectedGenres.map((g) => g.id));
+      } catch (err) {
+        console.error("Error updating genres:", err);
+        failedFields.push("genres");
       }
     }
 
@@ -265,6 +283,14 @@ export default function EditProfileScreen() {
               <Text style={styles.selectInstrumentsText}>Select instruments</Text>
             </AnimatedPressable>
             <InstrumentBadges instruments={selectedInstruments} />
+
+            <AnimatedPressable
+              style={styles.selectInstrumentsButton}
+              onPress={() => setGenresModalVisible(true)}
+            >
+              <Text style={styles.selectInstrumentsText}>Select genres</Text>
+            </AnimatedPressable>
+            <GenreBadges genres={selectedGenres} />
           </ScrollView>
         )}
 
@@ -275,6 +301,16 @@ export default function EditProfileScreen() {
           onClose={() => setInstrumentsModalVisible(false)}
           onConfirm={(_ids, instruments) => {
             setSelectedInstruments(instruments);
+          }}
+        />
+
+        <SelectGenresModal
+          visible={genresModalVisible}
+          selectedIds={selectedGenres.map((g) => g.id)}
+          maxSelected={MAX_GENRES}
+          onClose={() => setGenresModalVisible(false)}
+          onConfirm={(_ids, genres) => {
+            setSelectedGenres(genres);
           }}
         />
       </KeyboardAvoidingView>

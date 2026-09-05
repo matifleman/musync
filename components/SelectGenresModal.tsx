@@ -11,11 +11,12 @@ import { AnimatedPressable } from './AnimatedPressable'
 type Props = {
   visible: boolean
   selectedIds: number[]
+  maxSelected?: number
   onClose: () => void
   onConfirm: (ids: number[], genres: Genre[]) => void
 }
 
-export default function SelectGenresModal({ visible, selectedIds: initialSelectedIds, onClose, onConfirm }: Props) {
+export default function SelectGenresModal({ visible, selectedIds: initialSelectedIds, maxSelected, onClose, onConfirm }: Props) {
   const [catalog, setCatalog] = useState<Genre[]>([])
   const [loadingCatalog, setLoadingCatalog] = useState(false)
   const [selectedIds, setSelectedIds] = useState<number[]>(initialSelectedIds)
@@ -49,7 +50,11 @@ export default function SelectGenresModal({ visible, selectedIds: initialSelecte
   }, [visible])
 
   const toggle = (id: number) => {
-    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
+    setSelectedIds((prev) => {
+      if (prev.includes(id)) return prev.filter((x) => x !== id)
+      if (maxSelected && prev.length >= maxSelected) return prev
+      return [...prev, id]
+    })
   }
 
   const handleConfirm = () => {

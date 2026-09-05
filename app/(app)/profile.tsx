@@ -1,4 +1,5 @@
 import { AnimatedPressable } from "@/components/AnimatedPressable"
+import GenreBadges from "@/components/GenreBadges"
 import InstrumentBadges from "@/components/InstrumentBadges"
 import PostModal from "@/components/PostModal"
 import ProfileMenu from "@/components/ProfileMenu"
@@ -122,6 +123,7 @@ export default function ProfileScreen() {
           <Text style={styles.username}>@{user.userName}</Text>
           {/* Puedes agregar bio cuando tu backend lo tenga */}
           <InstrumentBadges instruments={user.favoriteInstruments ?? []} />
+          <GenreBadges genres={user.favoriteGenres ?? []} />
         </View>
 
         <UserBandsList bands={bands} />

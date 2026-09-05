@@ -1,4 +1,5 @@
 import { AnimatedPressable } from "@/components/AnimatedPressable"
+import GenreBadges from "@/components/GenreBadges"
 import InstrumentBadges from "@/components/InstrumentBadges"
 import PostModal from "@/components/PostModal"
 import Stat from "@/components/Stat"
@@ -162,6 +163,7 @@ export default function UserProfileScreen() {
           <Text style={styles.name}>{fullName}</Text>
           <Text style={styles.username}>@{user.userName}</Text>
           <InstrumentBadges instruments={user.favoriteInstruments ?? []} />
+          <GenreBadges genres={user.favoriteGenres ?? []} />
 
           <View style={styles.actionRow}>
             <TouchableOpacity

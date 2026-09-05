@@ -1911,6 +1911,60 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/users/me/genres": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["UpdateGenresCommand"];
+                    "text/json": components["schemas"]["UpdateGenresCommand"];
+                    "application/*+json": components["schemas"]["UpdateGenresCommand"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CurrentUserDTO"];
+                        "application/json": components["schemas"]["CurrentUserDTO"];
+                        "text/json": components["schemas"]["CurrentUserDTO"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/users/me/profile": {
         parameters: {
             query?: never;
@@ -2031,6 +2085,7 @@ export interface components {
             followedCount?: number;
             isFollowed?: boolean;
             favoriteInstruments?: components["schemas"]["InstrumentDTO"][] | null;
+            favoriteGenres?: components["schemas"]["GenreDTO"][] | null;
             email: string | null;
         };
         CustomProblemDetails: {
@@ -2135,6 +2190,9 @@ export interface components {
         UpdateBandNameRequest: {
             name?: string | null;
         };
+        UpdateGenresCommand: {
+            genreIds?: number[] | null;
+        };
         UpdateInstrumentsCommand: {
             instrumentIds?: number[] | null;
         };
@@ -2168,6 +2226,7 @@ export interface components {
             followedCount?: number;
             isFollowed?: boolean;
             favoriteInstruments?: components["schemas"]["InstrumentDTO"][] | null;
+            favoriteGenres?: components["schemas"]["GenreDTO"][] | null;
         };
         UserSearchDTO: {
             /** Format: int32 */

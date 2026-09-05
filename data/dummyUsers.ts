@@ -11,7 +11,8 @@ export const dummyUsers: User[] = [
     followersCount: 200,
     followedCount: 150,
     isFollowed: false,
-    favoriteInstruments: []
+    favoriteInstruments: [],
+    favoriteGenres: []
   },
   {
     id: 2,
@@ -23,7 +24,8 @@ export const dummyUsers: User[] = [
     followersCount: 200,
     followedCount: 150,
     isFollowed: false,
-    favoriteInstruments: []
+    favoriteInstruments: [],
+    favoriteGenres: []
   },
   {
     id: 3,
@@ -35,7 +37,8 @@ export const dummyUsers: User[] = [
     followersCount: 200,
     followedCount: 150,
     isFollowed: false,
-    favoriteInstruments: []
+    favoriteInstruments: [],
+    favoriteGenres: []
   },
   {
     id: 4,
@@ -47,7 +50,8 @@ export const dummyUsers: User[] = [
     followersCount: 200,
     followedCount: 150,
     isFollowed: false,
-    favoriteInstruments: []
+    favoriteInstruments: [],
+    favoriteGenres: []
   },
   {
     id: 5,
@@ -59,6 +63,7 @@ export const dummyUsers: User[] = [
     followersCount: 200,
     followedCount: 150,
     isFollowed: false,
-    favoriteInstruments: []
+    favoriteInstruments: [],
+    favoriteGenres: []
   },
 ];
