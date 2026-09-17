@@ -4,8 +4,10 @@ import Stat from "@/components/Stat"
 import { COLORS } from "@/constants/Colors"
 import { useSession } from "@/contexts/AuthContext"
 import { useBandProfile } from "@/hooks/useBandProfile"
+import { useBandReleases } from "@/hooks/useBandReleases"
 import { bandsService } from "@/services/bandsService"
 import { Band } from "@/types/Band.type"
+import { RELEASE_TYPE_LABELS } from "@/types/Release.type"
 import MaterialIcons from "@expo/vector-icons/MaterialIcons"
 import { useQueryClient } from "@tanstack/react-query"
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router"
@@ -36,6 +38,7 @@ export default function BandProfileScreen() {
   const [removingMemberId, setRemovingMemberId] = useState<number | null>(null)
 
   const { data: band, isLoading, error, refetch } = useBandProfile(bandId)
+  const { data: releases } = useBandReleases(bandId)
 
   // Seed the local follow toggle from the fetched band whenever it (re)loads.
   useEffect(() => {
@@ -248,6 +251,34 @@ export default function BandProfileScreen() {
         </View>
       </View>
 
+      {/* Releases */}
+      {releases && releases.length > 0 && (
+        <View style={styles.releasesSection}>
+          <Text style={styles.sectionTitle}>Releases</Text>
+          {releases.map((release) => (
+            <AnimatedPressable
+              key={release.id}
+              style={styles.releaseRow}
+              onPress={() => router.push(`/release/${release.id}`)}
+            >
+              {release.cover ? (
+                <Image source={{ uri: release.cover }} style={styles.releaseCover} />
+              ) : (
+                <View style={[styles.releaseCover, styles.releaseCoverPlaceholder]}>
+                  <MaterialIcons name="library-music" size={22} color={COLORS.lightBlueX2} />
+                </View>
+              )}
+              <View style={styles.releaseInfo}>
+                <Text style={styles.releaseTitle} numberOfLines={1}>{release.title}</Text>
+                <View style={styles.releaseTypeBadge}>
+                  <Text style={styles.releaseTypeText}>{RELEASE_TYPE_LABELS[release.type]}</Text>
+                </View>
+              </View>
+            </AnimatedPressable>
+          ))}
+        </View>
+      )}
+
       {/* Lineup */}
       <View style={styles.instrumentsSection}>
         <Text style={styles.sectionTitle}>Lineup</Text>
@@ -413,6 +444,49 @@ const styles = StyleSheet.create({
   leaveButtonText: {
     color: COLORS.red,
     fontWeight: "600",
+  },
+  releasesSection: {
+    paddingHorizontal: 16,
+    marginTop: 16,
+  },
+  releaseRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "#222",
+    gap: 12,
+  },
+  releaseCover: {
+    width: 56,
+    height: 56,
+    borderRadius: 6,
+  },
+  releaseCoverPlaceholder: {
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#1a1a1a",
+  },
+  releaseInfo: {
+    flex: 1,
+    gap: 4,
+  },
+  releaseTitle: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: COLORS.white,
+  },
+  releaseTypeBadge: {
+    alignSelf: "flex-start",
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    backgroundColor: "#1a1a1a",
+  },
+  releaseTypeText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: COLORS.lightBlueX2,
   },
   instrumentsSection: {
     paddingHorizontal: 16,

@@ -1145,6 +1145,164 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/bands/{bandId}/releases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    pageNumber?: number;
+                    pageSize?: number;
+                };
+                header?: never;
+                path: {
+                    bandId: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ReleaseListItemDTO"][];
+                        "application/json": components["schemas"]["ReleaseListItemDTO"][];
+                        "text/json": components["schemas"]["ReleaseListItemDTO"][];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    bandId: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "multipart/form-data": {
+                        Title?: string;
+                        Type?: components["schemas"]["ReleaseType"];
+                        Songs?: string[];
+                        /** Format: binary */
+                        Cover?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ReleaseDetailDTO"];
+                        "application/json": components["schemas"]["ReleaseDetailDTO"];
+                        "text/json": components["schemas"]["ReleaseDetailDTO"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/bands/releases/{releaseId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    releaseId: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ReleaseDetailDTO"];
+                        "application/json": components["schemas"]["ReleaseDetailDTO"];
+                        "text/json": components["schemas"]["ReleaseDetailDTO"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/follow/{userId}": {
         parameters: {
             query?: never;
@@ -2180,6 +2338,39 @@ export interface components {
             /** Format: email */
             email: string;
             password: string;
+        };
+        ReleaseDetailDTO: {
+            /** Format: int32 */
+            id: number;
+            /** Format: int32 */
+            bandId: number;
+            title: string | null;
+            type: components["schemas"]["ReleaseType"];
+            cover: string | null;
+            /** Format: date-time */
+            createdAt?: string | null;
+            songs?: components["schemas"]["SongDTO"][] | null;
+        };
+        ReleaseListItemDTO: {
+            /** Format: int32 */
+            id: number;
+            title: string | null;
+            type: components["schemas"]["ReleaseType"];
+            cover: string | null;
+            /** Format: date-time */
+            createdAt?: string | null;
+        };
+        /**
+         * Format: int32
+         * @enum {integer}
+         */
+        ReleaseType: 0 | 1 | 2;
+        SongDTO: {
+            /** Format: int32 */
+            id?: number;
+            title?: string | null;
+            /** Format: int32 */
+            trackNumber?: number;
         };
         UpdateBandGenresRequest: {
             genreIds?: number[] | null;
