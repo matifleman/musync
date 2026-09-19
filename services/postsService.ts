@@ -12,6 +12,14 @@ export const postsService = {
     return resolveServerImageUrls(data)
   },
 
+  async getFeed(pageNumber = 1, pageSize = 20): Promise<Post[]> {
+    const params = new URLSearchParams({ pageNumber: String(pageNumber), pageSize: String(pageSize) })
+    const response = await apiFetch(`${API_URL}/posts/feed?${params.toString()}`)
+    if (!response.ok) throw new Error(`Failed to fetch feed: ${response.status}`)
+    const data: Post[] = await response.json()
+    return resolveServerImageUrls(data)
+  },
+
   async getPostsByAuthor(authorId: number): Promise<Post[]> {
     const response = await apiFetch(`${API_URL}/posts/author/${authorId}`)
     if (!response.ok) throw new Error(`Failed to fetch posts: ${response.status}`)
