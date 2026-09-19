@@ -5,13 +5,6 @@ import { resolveServerImageUrls } from '@/utilities/resolverServerImageUrls'
 const API_URL = process.env.EXPO_PUBLIC_API_URL
 
 export const postsService = {
-  async getPosts(): Promise<Post[]> {
-    const response = await apiFetch(`${API_URL}/posts`)
-    if (!response.ok) throw new Error(`Failed to fetch posts: ${response.status}`)
-    const data: Post[] = await response.json()
-    return resolveServerImageUrls(data)
-  },
-
   async getFeed(pageNumber = 1, pageSize = 20): Promise<Post[]> {
     const params = new URLSearchParams({ pageNumber: String(pageNumber), pageSize: String(pageSize) })
     const response = await apiFetch(`${API_URL}/posts/feed?${params.toString()}`)
