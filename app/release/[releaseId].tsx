@@ -1,5 +1,7 @@
 import { AnimatedPressable } from "@/components/AnimatedPressable"
 import { COLORS } from "@/constants/Colors"
+import { linkToRelease } from "@/utilities/deepLinks"
+import { shareLink } from "@/utilities/share"
 import { useRelease } from "@/hooks/useRelease"
 import { RELEASE_TYPE_LABELS } from "@/types/Release.type"
 import MaterialIcons from "@expo/vector-icons/MaterialIcons"
@@ -40,7 +42,13 @@ export default function ReleaseDetailScreen() {
           <MaterialIcons name="arrow-back" size={24} color={COLORS.lightBlueX2} />
         </AnimatedPressable>
         <Text style={styles.headerTitle} numberOfLines={1}>{release.title}</Text>
-        <View style={styles.arrowBack} />
+        {/* Occupies the spacer that used to sit here purely to centre the title. */}
+        <AnimatedPressable
+          style={styles.arrowBack}
+          onPress={() => shareLink(linkToRelease(release.id), release.title)}
+        >
+          <MaterialIcons name="share" size={22} color={COLORS.lightBlueX2} />
+        </AnimatedPressable>
       </View>
 
       {/* Cover + info */}

@@ -2,6 +2,8 @@ import { AnimatedPressable } from "@/components/AnimatedPressable"
 import GenreBadges from "@/components/GenreBadges"
 import InstrumentBadges from "@/components/InstrumentBadges"
 import ProfileSkeleton from "@/components/skeletons/ProfileSkeleton"
+import { linkToUser } from "@/utilities/deepLinks"
+import { shareLink } from "@/utilities/share"
 import Stat from "@/components/Stat"
 import UserBandsList from "@/components/UserBandsList"
 import { COLORS } from "@/constants/Colors"
@@ -82,6 +84,12 @@ export default function UserProfileScreen() {
           <MaterialIcons name="arrow-back" size={24} color={COLORS.lightBlueX2} />
         </AnimatedPressable>
         <Text style={styles.headerTitle}>{user.userName}</Text>
+        <AnimatedPressable
+          style={styles.headerAction}
+          onPress={() => shareLink(linkToUser(user.id), `Check out @${user.userName} on Musync`)}
+        >
+          <MaterialIcons name="share" size={24} color={COLORS.lightBlueX2} />
+        </AnimatedPressable>
       </View>
 
       {/* Avatar + stats */}
@@ -178,6 +186,11 @@ const styles = StyleSheet.create({
   },
   arrowBack: {
     marginLeft: 8,
+  },
+  // Mirrors arrowBack's footprint so headerTitle's auto margins keep the title
+  // centred now that there is something on both sides of it.
+  headerAction: {
+    marginRight: 8,
   },
   headerTitle: {
     fontSize: 18,

@@ -6,6 +6,8 @@ import Stat from "@/components/Stat"
 import UserBandsList from "@/components/UserBandsList"
 import { COLORS } from '@/constants/Colors'
 import { useSession } from '@/contexts/AuthContext'
+import { linkToUser } from '@/utilities/deepLinks'
+import { shareLink } from '@/utilities/share'
 import { useUserBands } from "@/hooks/useUserBands"
 import { useUserFollowedBandsCount } from "@/hooks/useUserFollowedBandsCount"
 import { PostsGridSkeleton } from "@/components/skeletons/ProfileSkeleton"
@@ -152,6 +154,7 @@ export default function ProfileScreen() {
         visible={isMenuVisible}
         onClose={() => setIsMenuVisible(false)}
         onEditProfile={() => router.push('/profile/edit')}
+        onShareProfile={() => shareLink(linkToUser(user.id), `Check out @${user.userName} on Musync`)}
       />
     </>
   )

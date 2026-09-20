@@ -4,6 +4,8 @@ import Stat from "@/components/Stat"
 import { COLORS } from "@/constants/Colors"
 import { useSession } from "@/contexts/AuthContext"
 import BandProfileSkeleton from "@/components/skeletons/BandProfileSkeleton"
+import { linkToBand } from "@/utilities/deepLinks"
+import { shareLink } from "@/utilities/share"
 import { useBandProfile } from "@/hooks/useBandProfile"
 import { useToggleFollowBand } from "@/hooks/useToggleFollowBand"
 import { useBandReleases } from "@/hooks/useBandReleases"
@@ -158,11 +160,17 @@ export default function BandProfileScreen() {
           <MaterialIcons name="arrow-back" size={24} color={COLORS.lightBlueX2} />
         </AnimatedPressable>
         <Text style={styles.headerTitle}>{band.name}</Text>
-        {isLeader && (
-          <AnimatedPressable style={styles.editButton} onPress={() => router.push(`/band/edit/${band.id}`)}>
-            <MaterialIcons name="edit" size={22} color={COLORS.lightBlueX2} />
+        {/* Share is for everyone; edit stays leader-only next to it. */}
+        <View style={styles.headerActions}>
+          <AnimatedPressable onPress={() => shareLink(linkToBand(band.id), band.name)}>
+            <MaterialIcons name="share" size={22} color={COLORS.lightBlueX2} />
           </AnimatedPressable>
-        )}
+          {isLeader && (
+            <AnimatedPressable onPress={() => router.push(`/band/edit/${band.id}`)}>
+              <MaterialIcons name="edit" size={22} color={COLORS.lightBlueX2} />
+            </AnimatedPressable>
+          )}
+        </View>
       </View>
 
       {/* Avatar + stats */}
@@ -337,7 +345,10 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     marginHorizontal: "auto",
   },
-  editButton: {
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
     marginRight: 12,
   },
   topBlock: {
