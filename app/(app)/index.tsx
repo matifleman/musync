@@ -1,5 +1,5 @@
 import { AnimatedPressable } from "@/components/AnimatedPressable";
-import ConfirmLogoutModal from '@/components/ConfirmLogoutModal';
+import ConfirmModal from '@/components/ConfirmModal';
 import Loading from '@/components/Loading';
 import Post from "@/components/Post";
 import { COLORS } from "@/constants/Colors";
@@ -66,8 +66,11 @@ export default function Index() {
         <AnimatedPressable>
           <MaterialIcons name="logout" size={24} color={COLORS.lightBlueX2} onPress={() => setShowLogoutConfirm(true)} />
         </AnimatedPressable>
-        <ConfirmLogoutModal
+        <ConfirmModal
           visible={showLogoutConfirm}
+          title="Confirm logout"
+          message="Are you sure you want to log out?"
+          confirmLabel="Log out"
           onCancel={() => setShowLogoutConfirm(false)}
           onConfirm={() => {
             setShowLogoutConfirm(false);

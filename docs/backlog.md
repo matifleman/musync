@@ -48,10 +48,10 @@ Dependencies: **6 → 5** (onboarding uses the suggestions), **8 → 3, 7** (com
 - Keep the existing empty state for users who follow nobody.
 
 **Acceptance criteria**
-- [ ] The feed only shows posts from followed users and yourself, newest first.
-- [ ] Scrolling to the end loads the next page; the last page stops requesting.
-- [ ] Pull-to-refresh resets to page 1.
-- [ ] Following or unfollowing someone is reflected on the next refresh.
+- [x] The feed only shows posts from followed users and yourself, newest first.
+- [x] Scrolling to the end loads the next page; the last page stops requesting.
+- [x] Pull-to-refresh resets to page 1.
+- [x] Following or unfollowing someone is reflected on the next refresh.
 
 **Open questions**
 - Should posts by members of bands you follow show up too? (Bands can't post today.)
@@ -74,10 +74,10 @@ Dependencies: **6 → 5** (onboarding uses the suggestions), **8 → 3, 7** (com
 - Invalidate the feed and profile post queries after an edit or delete.
 
 **Acceptance criteria**
-- [ ] The author can edit a caption; the change shows in the feed, profile and detail.
-- [ ] The author can delete a post after confirming; it disappears everywhere and the image file is removed.
-- [ ] A non-author gets 403 from PATCH/DELETE and never sees the menu.
-- [ ] `/post/{id}` opens a single post.
+- [x] The author can edit a caption; the change shows in the feed, profile and detail.
+- [x] The author can delete a post after confirming; it disappears everywhere and the image file is removed.
+- [x] A non-author gets 403 from PATCH/DELETE and never sees the menu.
+- [x] `/post/{id}` opens a single post.
 
 ---
 

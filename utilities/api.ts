@@ -17,3 +17,23 @@ export async function apiFetch(input: RequestInfo, init?: RequestInit): Promise<
 }
 
 export default apiFetch
+
+// Carries the status alongside the message so callers can tell a 404 (the post
+// is gone) from a 403 (not your post) from a network failure.
+export class ApiError extends Error {
+  constructor(message: string, readonly status: number) {
+    super(message)
+    this.name = 'ApiError'
+  }
+}
+
+// The backend answers 400/403/404 with ProblemDetails, whose `title` is the
+// exception message — surfacing it beats "Failed to delete post: 403".
+export async function apiError(response: Response, fallback: string): Promise<ApiError> {
+  const body = await response.json().catch(() => ({} as Record<string, unknown>))
+  const message =
+    typeof body.title === 'string' ? body.title :
+    typeof body.message === 'string' ? body.message :
+    `${fallback}: ${response.status}`
+  return new ApiError(message, response.status)
+}

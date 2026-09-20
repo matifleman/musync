@@ -1,7 +1,6 @@
 import { AnimatedPressable } from "@/components/AnimatedPressable"
 import GenreBadges from "@/components/GenreBadges"
 import InstrumentBadges from "@/components/InstrumentBadges"
-import PostModal from "@/components/PostModal"
 import ProfileMenu from "@/components/ProfileMenu"
 import Stat from "@/components/Stat"
 import UserBandsList from "@/components/UserBandsList"
@@ -11,7 +10,6 @@ import { useUserBands } from "@/hooks/useUserBands"
 import { useUserFollowedBandsCount } from "@/hooks/useUserFollowedBandsCount"
 import { useUserPosts } from "@/hooks/useUserPosts"
 import { usersService } from "@/services/usersService"
-import { Post as PostType } from '@/types/Post.type'
 import { resolveUserProfilePictureUrl } from "@/utilities/resolverServerImageUrls"
 import Entypo from "@expo/vector-icons/Entypo"
 import MaterialIcons from "@expo/vector-icons/MaterialIcons"
@@ -37,8 +35,6 @@ const GRID_ITEM_SIZE = Math.floor((width - GRID_SPACING * (GRID_COLUMNS - 1)) / 
 
 export default function ProfileScreen() {
   const { currentUser, updateCurrentUser } = useSession()
-  const [selectedPost, setSelectedPost] = useState<PostType | null>(null)
-  const [isModalVisible, setIsModalVisible] = useState(false)
   const [isMenuVisible, setIsMenuVisible] = useState(false)
 
   // The profile's own user is always just the session's currentUser — no need
@@ -65,16 +61,6 @@ export default function ProfileScreen() {
       })
     }, [refetchPosts, refetchBands, refetchFollowedBandsCount, updateCurrentUser])
   )
-
-  const openPost = (post: PostType) => {
-    setSelectedPost(post)
-    setIsModalVisible(true)
-  }
-
-  const closePost = () => {
-    setIsModalVisible(false)
-    setSelectedPost(null)
-  }
 
   if (!user) {
     return (
@@ -145,22 +131,15 @@ export default function ProfileScreen() {
         {/* grid of posts */}
         <View style={styles.postsGrid}>
           {posts.map((item) => (
-            <TouchableOpacity key={item.id} onPress={() => openPost(item)}>
-              <Image
-                source={typeof item.image === 'string' ? { uri: item.image } : item.image}
-                style={styles.gridItem}
-              />
+            <TouchableOpacity
+              key={item.id}
+              onPress={() => router.push({ pathname: '/post/[postId]', params: { postId: item.id } })}
+            >
+              <Image source={{ uri: item.image }} style={styles.gridItem} />
             </TouchableOpacity>
           ))}
         </View>
       </ScrollView>
-
-      {/* Modal para mostrar el post completo */}
-      <PostModal
-        post={selectedPost}
-        visible={isModalVisible}
-        onClose={closePost}
-      />
 
       <ProfileMenu
         visible={isMenuVisible}

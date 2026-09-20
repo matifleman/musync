@@ -8,12 +8,13 @@ import PostHeader from "./PostHeader";
 
 type Props = {
   post: PostType;
+  onDeleted?: () => void;
 };
 
-export default function Post({ post }: Props) {
+export default function Post({ post, onDeleted }: Props) {
   return (
     <View style={styles.card}>
-      <PostHeader post={post} />
+      <PostHeader post={post} onDeleted={onDeleted} />
 
       <Image source={post.image} style={styles.postImage} />
 
