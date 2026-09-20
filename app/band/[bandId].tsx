@@ -3,6 +3,7 @@ import GenreBadges from "@/components/GenreBadges"
 import Stat from "@/components/Stat"
 import { COLORS } from "@/constants/Colors"
 import { useSession } from "@/contexts/AuthContext"
+import BandProfileSkeleton from "@/components/skeletons/BandProfileSkeleton"
 import { useBandProfile } from "@/hooks/useBandProfile"
 import { useToggleFollowBand } from "@/hooks/useToggleFollowBand"
 import { useBandReleases } from "@/hooks/useBandReleases"
@@ -137,12 +138,7 @@ export default function BandProfileScreen() {
     }
   }
 
-  if (isLoading)
-    return (
-      <View style={[styles.screen, styles.center]}>
-        <ActivityIndicator size="large" color={COLORS.white} />
-      </View>
-    )
+  if (isLoading) return <BandProfileSkeleton />
 
   if (error || !band)
     return (

@@ -1,6 +1,7 @@
 import { AnimatedPressable } from "@/components/AnimatedPressable"
 import GenreBadges from "@/components/GenreBadges"
 import InstrumentBadges from "@/components/InstrumentBadges"
+import ProfileSkeleton from "@/components/skeletons/ProfileSkeleton"
 import Stat from "@/components/Stat"
 import UserBandsList from "@/components/UserBandsList"
 import { COLORS } from "@/constants/Colors"
@@ -14,7 +15,6 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons"
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router"
 import React, { useCallback } from "react"
 import {
-  ActivityIndicator,
   Dimensions,
   Image,
   ScrollView,
@@ -63,12 +63,7 @@ export default function UserProfileScreen() {
     });
   }
 
-  if (isLoading)
-    return (
-      <View style={[styles.screen, styles.center]}>
-        <ActivityIndicator size="large" color={COLORS.white} />
-      </View>
-    )
+  if (isLoading) return <ProfileSkeleton variant="other" />
 
   if (error || !user)
     return (
