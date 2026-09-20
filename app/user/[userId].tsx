@@ -1,7 +1,6 @@
 import { AnimatedPressable } from "@/components/AnimatedPressable"
 import GenreBadges from "@/components/GenreBadges"
 import InstrumentBadges from "@/components/InstrumentBadges"
-import PostModal from "@/components/PostModal"
 import Stat from "@/components/Stat"
 import UserBandsList from "@/components/UserBandsList"
 import { COLORS } from "@/constants/Colors"
@@ -11,7 +10,6 @@ import { useUserFollowedBandsCount } from "@/hooks/useUserFollowedBandsCount"
 import { useUserPosts } from "@/hooks/useUserPosts"
 import { useUserProfile } from "@/hooks/useUserProfile"
 import { usersService } from "@/services/usersService"
-import { Post as PostType } from "@/types/Post.type"
 import { User } from "@/types/User.type"
 import MaterialIcons from "@expo/vector-icons/MaterialIcons"
 import { useQueryClient } from "@tanstack/react-query"
@@ -40,8 +38,6 @@ export default function UserProfileScreen() {
   const { currentUser, updateCurrentUser } = useSession()
   const queryClient = useQueryClient()
 
-  const [isModalVisible, setIsModalVisible] = useState(false)
-  const [selectedPost, setSelectedPost] = useState<PostType | null>(null)
   const [isFollowed, setIsFollowed] = useState<boolean>(false)
   const [isLoadingFollow, setIsLoadingFollow] = useState(false)
 
@@ -102,16 +98,6 @@ export default function UserProfileScreen() {
     }
   }
 
-  const openPost = (post: PostType) => {
-    setSelectedPost(post)
-    setIsModalVisible(true)
-  }
-
-  const closePost = () => {
-    setSelectedPost(null)
-    setIsModalVisible(false)
-  }
-
   if (isLoading)
     return (
       <View style={[styles.screen, styles.center]}>
@@ -129,87 +115,83 @@ export default function UserProfileScreen() {
   const fullName = `${user.firstName} ${user.lastName}`
 
   return (
-    <>
-      <ScrollView style={styles.screen} contentContainerStyle={styles.screenContent}>
-        {/* Header */}
-        <View style={styles.header}>
-          <AnimatedPressable style={styles.arrowBack} onPress={() => router.back()}>
-            <MaterialIcons name="arrow-back" size={24} color={COLORS.lightBlueX2} />
+    <ScrollView style={styles.screen} contentContainerStyle={styles.screenContent}>
+      {/* Header */}
+      <View style={styles.header}>
+        <AnimatedPressable style={styles.arrowBack} onPress={() => router.back()}>
+          <MaterialIcons name="arrow-back" size={24} color={COLORS.lightBlueX2} />
+        </AnimatedPressable>
+        <Text style={styles.headerTitle}>{user.userName}</Text>
+      </View>
+
+      {/* Avatar + stats */}
+      <View style={styles.topBlock}>
+        <View style={styles.avatarWrapper}>
+          <Image source={{ uri: user.profilePicture }} style={styles.avatar} />
+        </View>
+
+        <View style={styles.statsContainer}>
+          <AnimatedPressable onPress={() => router.push({ pathname: '/list/[listType]', params: { listType: 'bands', userId } })}>
+            <Stat number={followedBandsCount?.followedBandsCount ?? 0} label="Bands" />
           </AnimatedPressable>
-          <Text style={styles.headerTitle}>{user.userName}</Text>
+          <AnimatedPressable onPress={() => router.push({ pathname: '/list/[listType]', params: { listType: 'followers', userId } })}>
+            <Stat number={user.followersCount} label="Followers" />
+          </AnimatedPressable>
+          <AnimatedPressable onPress={() => router.push({ pathname: '/list/[listType]', params: { listType: 'following', userId } })}>
+            <Stat number={user.followedCount} label="Following" />
+          </AnimatedPressable>
         </View>
+      </View>
 
-        {/* Avatar + stats */}
-        <View style={styles.topBlock}>
-          <View style={styles.avatarWrapper}>
-            <Image source={{ uri: user.profilePicture }} style={styles.avatar} />
+      {/* Info + Follow */}
+      <View style={styles.infoBlock}>
+        <Text style={styles.name}>{fullName}</Text>
+        <Text style={styles.username}>@{user.userName}</Text>
+        <InstrumentBadges instruments={user.favoriteInstruments ?? []} />
+        <GenreBadges genres={user.favoriteGenres ?? []} />
+
+        <View style={styles.actionRow}>
+          <TouchableOpacity
+            disabled={isLoadingFollow}
+            onPress={handleFollowToggle}
+            style={[
+              styles.followButton,
+              isFollowed ? styles.followingButton : styles.followButtonOutline,
+            ]}
+          >
+            {isLoadingFollow ? (
+              <ActivityIndicator color={COLORS.white} size="small" />
+            ) : (
+              <Text style={styles.followButtonText}>
+                {isFollowed ? "Following" : "Follow"}
+              </Text>
+            )}
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      <UserBandsList bands={bands} />
+
+      {
+        posts.length === 0 && (
+          <View style={[styles.centerContent, {marginTop: 40}]}>
+            <Text style={{color: COLORS.white, fontSize: 20}}>{user.userName} hasn&apos;t posted anything yet.</Text>
           </View>
+        )
+      }
 
-          <View style={styles.statsContainer}>
-            <AnimatedPressable onPress={() => router.push({ pathname: '/list/[listType]', params: { listType: 'bands', userId } })}>
-              <Stat number={followedBandsCount?.followedBandsCount ?? 0} label="Bands" />
-            </AnimatedPressable>
-            <AnimatedPressable onPress={() => router.push({ pathname: '/list/[listType]', params: { listType: 'followers', userId } })}>
-              <Stat number={user.followersCount} label="Followers" />
-            </AnimatedPressable>
-            <AnimatedPressable onPress={() => router.push({ pathname: '/list/[listType]', params: { listType: 'following', userId } })}>
-              <Stat number={user.followedCount} label="Following" />
-            </AnimatedPressable>
-          </View>
-        </View>
-
-        {/* Info + Follow */}
-        <View style={styles.infoBlock}>
-          <Text style={styles.name}>{fullName}</Text>
-          <Text style={styles.username}>@{user.userName}</Text>
-          <InstrumentBadges instruments={user.favoriteInstruments ?? []} />
-          <GenreBadges genres={user.favoriteGenres ?? []} />
-
-          <View style={styles.actionRow}>
-            <TouchableOpacity
-              disabled={isLoadingFollow}
-              onPress={handleFollowToggle}
-              style={[
-                styles.followButton,
-                isFollowed ? styles.followingButton : styles.followButtonOutline,
-              ]}
-            >
-              {isLoadingFollow ? (
-                <ActivityIndicator color={COLORS.white} size="small" />
-              ) : (
-                <Text style={styles.followButtonText}>
-                  {isFollowed ? "Following" : "Follow"}
-                </Text>
-              )}
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <UserBandsList bands={bands} />
-
-        {
-          posts.length === 0 && (
-            <View style={[styles.centerContent, {marginTop: 40}]}>
-              <Text style={{color: COLORS.white, fontSize: 20}}>{user.userName} hasn&apos;t posted anything yet.</Text>
-            </View>
-          )
-        }
-
-        {/* Posts grid */}
-        <View style={styles.postsGrid}>
-          {posts.map((item) => (
-            <TouchableOpacity key={item.id} onPress={() => openPost(item)}>
-              <Image
-                source={typeof item.image === "string" ? { uri: item.image } : item.image}
-                style={styles.gridItem}
-              />
-            </TouchableOpacity>
-          ))}
-        </View>
-      </ScrollView>
-
-      <PostModal post={selectedPost} visible={isModalVisible} onClose={closePost} />
-    </>
+      {/* Posts grid */}
+      <View style={styles.postsGrid}>
+        {posts.map((item) => (
+          <TouchableOpacity
+            key={item.id}
+            onPress={() => router.push({ pathname: "/post/[postId]", params: { postId: item.id } })}
+          >
+            <Image source={{ uri: item.image }} style={styles.gridItem} />
+          </TouchableOpacity>
+        ))}
+      </View>
+    </ScrollView>
   )
 }
 
