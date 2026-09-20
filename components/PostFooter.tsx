@@ -1,8 +1,8 @@
 import { COLORS } from '@/constants/Colors';
-import { postsService } from '@/services/postsService';
+import { useToggleLike } from '@/hooks/useToggleLike';
 import { Post } from '@/types/Post.type';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import {
   StyleSheet,
   Text,
@@ -16,42 +16,22 @@ type Props = {
 };
 
 export default function PostFooter({ post }: Props) {
-  const [liked, setLiked] = useState(post.liked);
   const [showComments, setShowComments] = useState(false);
-  const isToggling = useRef(false);
+  const toggleLike = useToggleLike(post.id);
 
-  // The feed is refetched on focus and after every edit/delete, so the local
-  // toggle has to follow the server's value instead of staying frozen at the
-  // one it mounted with. Skipped mid-request so an in-flight toggle isn't
-  // clobbered by a refetch that hasn't seen it yet.
-  useEffect(() => {
-    if (!isToggling.current) setLiked(post.liked);
-  }, [post.liked]);
-
-  const toggleLike = () => {
-    const next = !liked;
-    isToggling.current = true;
-    setLiked(next);
-
-    const request = next ? postsService.likePost(post.id) : postsService.unlikePost(post.id);
-    request
-      .catch((error) => {
-        console.error('Error toggling like:', error);
-        setLiked(!next);
-      })
-      .finally(() => {
-        isToggling.current = false;
-      });
-  }
+  // No local mirror of `liked`: the hook patches every cache holding this post,
+  // so the prop below is already the optimistic value, and a failed request
+  // rolls those caches back. That removes the mount-time-stale-value problem the
+  // old useState/useEffect/isToggling trio existed to work around.
   const hideComments = () => setShowComments(false);
 
   return (
     <View style={styles.footer}>
       {/* Botones Like y Comment */}
       <View style={styles.icons}>
-        <AnimatedPressable onPress={toggleLike}>
+        <AnimatedPressable onPress={() => toggleLike.mutate(!post.liked)}>
           <FontAwesome 
-            name={liked ? 'heart' : 'heart-o'} 
+            name={post.liked ? 'heart' : 'heart-o'} 
             size={24} 
             color={COLORS.lightBlueX2}
           />
