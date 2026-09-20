@@ -17,7 +17,7 @@ export default function Comment({comment}: Props) {
         <Text style={styles.commentUsername}>
           {comment.author.userName}{' '}
           <Text style={styles.commentText}>
-            {comment.content}
+            {comment.text}
           </Text>
         </Text>
         <Text style={styles.commentDatetime}>

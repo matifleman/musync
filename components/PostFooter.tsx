@@ -57,12 +57,15 @@ export default function PostFooter({ post }: Props) {
           />
         </AnimatedPressable>
 
-        <AnimatedPressable onPress={() => setShowComments(true)}>
+        <AnimatedPressable style={styles.commentButton} onPress={() => setShowComments(true)}>
           <FontAwesome 
             name="comments-o" 
             size={24} 
             color={COLORS.lightBlueX2} 
           />
+          {post.commentsCount > 0 ? (
+            <Text style={styles.commentCount}>{post.commentsCount}</Text>
+          ) : null}
         </AnimatedPressable>
       </View>
 
@@ -75,7 +78,14 @@ export default function PostFooter({ post }: Props) {
         </Text>
       ) : null}
 
-      <CommentsModal isVisible={showComments} onClose={hideComments} />
+      {showComments && (
+        <CommentsModal
+          isVisible={showComments}
+          onClose={hideComments}
+          postId={post.id}
+          postAuthorId={post.author.id}
+        />
+      )}
     </View>
   );
 };
@@ -93,5 +103,16 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 4, 
     width: "26%",
+  },
+
+  commentButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+
+  commentCount: {
+    fontSize: 14,
+    color: COLORS.lightBlueX2,
   },
 });
