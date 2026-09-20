@@ -2,16 +2,18 @@ import { Band, UserBand } from "@/types/Band.type";
 import { Post } from "@/types/Post.type";
 import { ReleaseDetail, ReleaseListItem } from "@/types/Release.type";
 
-export const resolveServerImageUrls = (posts: Post[]): Post[] => {
-  return posts.map((post: Post) => ({
-    ...post,
-    author: {
-      ...post.author,
-      profilePicture: `${process.env.EXPO_PUBLIC_SERVER_URL}/${post.author.profilePicture}`,
-    },
-    image: `${process.env.EXPO_PUBLIC_SERVER_URL}/${post.image}`
-  }));
-}
+// Idempotent: a post whose urls are already absolute is returned untouched, so
+// writing a server response into an already-resolved cache entry can't produce
+// a double prefix.
+export const resolvePostImageUrls = (post: Post): Post => ({
+  ...post,
+  author: resolveUserProfilePictureUrl(post.author),
+  image: /^https?:\/\//.test(post.image)
+    ? post.image
+    : `${process.env.EXPO_PUBLIC_SERVER_URL}/${post.image}`,
+});
+
+export const resolveServerImageUrls = (posts: Post[]): Post[] => posts.map(resolvePostImageUrls);
 
 export const resolveUserProfilePictureUrl = <T extends { profilePicture: string }>(user: T): T => {
   if (/^https?:\/\//.test(user.profilePicture)) return user
