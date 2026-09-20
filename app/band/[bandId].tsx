@@ -3,7 +3,11 @@ import GenreBadges from "@/components/GenreBadges"
 import Stat from "@/components/Stat"
 import { COLORS } from "@/constants/Colors"
 import { useSession } from "@/contexts/AuthContext"
+import BandProfileSkeleton from "@/components/skeletons/BandProfileSkeleton"
+import { linkToBand } from "@/utilities/deepLinks"
+import { shareLink } from "@/utilities/share"
 import { useBandProfile } from "@/hooks/useBandProfile"
+import { useToggleFollowBand } from "@/hooks/useToggleFollowBand"
 import { useBandReleases } from "@/hooks/useBandReleases"
 import { bandsService } from "@/services/bandsService"
 import { Band } from "@/types/Band.type"
@@ -11,7 +15,7 @@ import { RELEASE_TYPE_LABELS } from "@/types/Release.type"
 import MaterialIcons from "@expo/vector-icons/MaterialIcons"
 import { useQueryClient } from "@tanstack/react-query"
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router"
-import React, { useCallback, useEffect, useState } from "react"
+import React, { useCallback, useState } from "react"
 import {
   ActivityIndicator,
   Image,
@@ -31,19 +35,14 @@ export default function BandProfileScreen() {
   const { currentUser } = useSession()
   const queryClient = useQueryClient()
 
-  const [isFollowed, setIsFollowed] = useState<boolean>(false)
-  const [isLoadingFollow, setIsLoadingFollow] = useState(false)
   const [joiningInstrumentId, setJoiningInstrumentId] = useState<number | null>(null)
   const [isLeavingBand, setIsLeavingBand] = useState(false)
   const [removingMemberId, setRemovingMemberId] = useState<number | null>(null)
 
+  const toggleFollow = useToggleFollowBand()
+
   const { data: band, isLoading, error, refetch } = useBandProfile(bandId)
   const { data: releases } = useBandReleases(bandId)
-
-  // Seed the local follow toggle from the fetched band whenever it (re)loads.
-  useEffect(() => {
-    setIsFollowed(band?.isFollowedByCurrentUser ?? false)
-  }, [band])
 
   useFocusEffect(
     useCallback(() => {
@@ -51,36 +50,16 @@ export default function BandProfileScreen() {
     }, [bandId, refetch])
   )
 
-  const handleFollowToggle = async () => {
+  // Reads straight from the cached band; useToggleFollowBand patches the band,
+  // my followed-bands list and the followed-bands count together, and rolls all
+  // three back on failure.
+  const handleFollowToggle = () => {
     if (!currentUser || !band) return
-    try {
-      setIsLoadingFollow(true)
-
-      const result = isFollowed
-        ? await bandsService.unfollowBand(band.id)
-        : await bandsService.followBand(band.id)
-
-      Toast.show({
-        type: 'success',
-        text1: result.isFollowing ? 'Following' : "You've unfollowed",
-        text2: band.name,
-      })
-
-      // Trust the server-returned counts instead of guessing at +1/-1 locally.
-      queryClient.setQueryData<Band>(['bands', bandId], (old) =>
-        old ? { ...old, followersCount: result.followersCount, isFollowedByCurrentUser: result.isFollowing } : old
-      )
-      setIsFollowed(result.isFollowing)
-    } catch (error) {
-      console.error('Error following/unfollowing band:', error)
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: 'Could not complete the action',
-      })
-    } finally {
-      setIsLoadingFollow(false)
-    }
+    toggleFollow.mutate({
+      bandId: band.id,
+      nextFollowing: !band.isFollowedByCurrentUser,
+      displayName: band.name,
+    })
   }
 
   const handleJoin = async (instrumentId: number, instrumentName: string) => {
@@ -161,12 +140,7 @@ export default function BandProfileScreen() {
     }
   }
 
-  if (isLoading)
-    return (
-      <View style={[styles.screen, styles.center]}>
-        <ActivityIndicator size="large" color={COLORS.white} />
-      </View>
-    )
+  if (isLoading) return <BandProfileSkeleton />
 
   if (error || !band)
     return (
@@ -186,11 +160,17 @@ export default function BandProfileScreen() {
           <MaterialIcons name="arrow-back" size={24} color={COLORS.lightBlueX2} />
         </AnimatedPressable>
         <Text style={styles.headerTitle}>{band.name}</Text>
-        {isLeader && (
-          <AnimatedPressable style={styles.editButton} onPress={() => router.push(`/band/edit/${band.id}`)}>
-            <MaterialIcons name="edit" size={22} color={COLORS.lightBlueX2} />
+        {/* Share is for everyone; edit stays leader-only next to it. */}
+        <View style={styles.headerActions}>
+          <AnimatedPressable onPress={() => shareLink(linkToBand(band.id), band.name)}>
+            <MaterialIcons name="share" size={22} color={COLORS.lightBlueX2} />
           </AnimatedPressable>
-        )}
+          {isLeader && (
+            <AnimatedPressable onPress={() => router.push(`/band/edit/${band.id}`)}>
+              <MaterialIcons name="edit" size={22} color={COLORS.lightBlueX2} />
+            </AnimatedPressable>
+          )}
+        </View>
       </View>
 
       {/* Avatar + stats */}
@@ -219,20 +199,15 @@ export default function BandProfileScreen() {
 
         <View style={styles.actionRow}>
           <TouchableOpacity
-            disabled={isLoadingFollow}
             onPress={handleFollowToggle}
             style={[
               styles.followButton,
-              isFollowed ? styles.followingButton : styles.followButtonOutline,
+              band.isFollowedByCurrentUser ? styles.followingButton : styles.followButtonOutline,
             ]}
           >
-            {isLoadingFollow ? (
-              <ActivityIndicator color={COLORS.white} size="small" />
-            ) : (
-              <Text style={styles.followButtonText}>
-                {isFollowed ? "Following" : "Follow"}
-              </Text>
-            )}
+            <Text style={styles.followButtonText}>
+              {band.isFollowedByCurrentUser ? "Following" : "Follow"}
+            </Text>
           </TouchableOpacity>
 
           {isMember && (
@@ -370,7 +345,10 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     marginHorizontal: "auto",
   },
-  editButton: {
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
     marginRight: 12,
   },
   topBlock: {

@@ -30,6 +30,7 @@ import {
   TouchableWithoutFeedback,
   View,
 } from "react-native";
+import { successFeedback } from "@/utilities/haptics";
 import Toast from "react-native-toast-message";
 import { z } from "zod";
 
@@ -161,6 +162,10 @@ export default function CreateScreen() {
 
     try {
       await postsService.createPost(formData);
+      // On success rather than on tap: unlike a like or a follow, nothing here
+      // is optimistic, so the milestone is the server confirming the upload.
+      successFeedback();
+      Toast.show({ type: 'success', text1: 'Post published' });
       // Invalidates both the feed ("posts") and any author-specific post lists
       // ("posts", "author", id), since react-query matches by key prefix.
       queryClient.invalidateQueries({ queryKey: ["posts"] });
@@ -168,6 +173,11 @@ export default function CreateScreen() {
     }
     catch (err) {
       console.error("Error:", err);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: err instanceof Error ? err.message : 'Could not publish the post',
+      });
     }
     finally {
       setLoading(false);

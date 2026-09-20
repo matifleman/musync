@@ -1,6 +1,6 @@
 import { AnimatedPressable } from "@/components/AnimatedPressable";
 import ConfirmModal from '@/components/ConfirmModal';
-import Loading from '@/components/Loading';
+import FeedSkeleton from '@/components/skeletons/FeedSkeleton';
 import Post from "@/components/Post";
 import { COLORS } from "@/constants/Colors";
 import { FONTS } from "@/constants/Fonts";
@@ -79,7 +79,7 @@ export default function Index() {
         />
       </View>
       {isLoading ? (
-        <Loading message="Loading posts..." />
+        <FeedSkeleton />
       ) : (
         <FlatList
           contentContainerStyle={styles.postsList}

@@ -1,6 +1,9 @@
 import { AnimatedPressable } from "@/components/AnimatedPressable"
 import GenreBadges from "@/components/GenreBadges"
 import InstrumentBadges from "@/components/InstrumentBadges"
+import ProfileSkeleton from "@/components/skeletons/ProfileSkeleton"
+import { linkToUser } from "@/utilities/deepLinks"
+import { shareLink } from "@/utilities/share"
 import Stat from "@/components/Stat"
 import UserBandsList from "@/components/UserBandsList"
 import { COLORS } from "@/constants/Colors"
@@ -8,15 +11,12 @@ import { useSession } from "@/contexts/AuthContext"
 import { useUserBands } from "@/hooks/useUserBands"
 import { useUserFollowedBandsCount } from "@/hooks/useUserFollowedBandsCount"
 import { useUserPosts } from "@/hooks/useUserPosts"
+import { useToggleFollowUser } from "@/hooks/useToggleFollowUser"
 import { useUserProfile } from "@/hooks/useUserProfile"
-import { usersService } from "@/services/usersService"
-import { User } from "@/types/User.type"
 import MaterialIcons from "@expo/vector-icons/MaterialIcons"
-import { useQueryClient } from "@tanstack/react-query"
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router"
-import React, { useCallback, useEffect, useState } from "react"
+import React, { useCallback } from "react"
 import {
-  ActivityIndicator,
   Dimensions,
   Image,
   ScrollView,
@@ -25,7 +25,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native"
-import Toast from "react-native-toast-message"
 
 const { width } = Dimensions.get("window")
 const AVATAR_SIZE = 110
@@ -35,21 +34,13 @@ const GRID_ITEM_SIZE = Math.floor((width - GRID_SPACING * (GRID_COLUMNS - 1)) / 
 
 export default function UserProfileScreen() {
   const { userId } = useLocalSearchParams<{ userId: string }>()
-  const { currentUser, updateCurrentUser } = useSession()
-  const queryClient = useQueryClient()
-
-  const [isFollowed, setIsFollowed] = useState<boolean>(false)
-  const [isLoadingFollow, setIsLoadingFollow] = useState(false)
+  const { currentUser } = useSession()
+  const toggleFollow = useToggleFollowUser()
 
   const { data: user, isLoading, error, refetch: refetchProfile } = useUserProfile(userId)
   const { data: posts = [], refetch: refetchPosts } = useUserPosts(userId ? Number(userId) : undefined)
   const { data: bands = [], refetch: refetchBands } = useUserBands(userId ? Number(userId) : undefined)
   const { data: followedBandsCount, refetch: refetchFollowedBandsCount } = useUserFollowedBandsCount(userId ? Number(userId) : undefined)
-
-  // Seed the local follow toggle from the fetched profile whenever it (re)loads.
-  useEffect(() => {
-    setIsFollowed(user?.isFollowed ?? false)
-  }, [user])
 
   useFocusEffect(
     useCallback(() => {
@@ -62,48 +53,19 @@ export default function UserProfileScreen() {
     }, [userId, refetchProfile, refetchPosts, refetchBands, refetchFollowedBandsCount])
   )
 
-  const handleFollowToggle = async () => {
+  // The button reads straight from the cached profile; useToggleFollowUser
+  // patches it (and every list this person appears in) on tap and rolls all of
+  // them back if the request fails.
+  const handleFollowToggle = () => {
     if (!currentUser || !user) return;
-    try {
-      setIsLoadingFollow(true);
-
-      const result = isFollowed
-        ? await usersService.unfollowUser(parseInt(userId))
-        : await usersService.followUser(parseInt(userId));
-
-      Toast.show({
-        type: 'success',
-        text1: result.isFollowing ? 'Following' : "You've unfollowed",
-        text2: `@${user.userName}`,
-      });
-
-      // Trust the server-returned counts instead of guessing at +1/-1 locally.
-      // isFollowed must be patched here too — otherwise the `useEffect` above
-      // resyncs `isFollowed` from this stale cached value on the next render
-      // and immediately reverts the toggle.
-      queryClient.setQueryData<User>(['users', userId], (old) =>
-        old ? { ...old, followersCount: result.followersCount, isFollowed: result.isFollowing } : old
-      );
-      setIsFollowed(result.isFollowing);
-      updateCurrentUser({ ...currentUser, followedCount: result.followingCount });
-    } catch (error) {
-      console.error('Error al seguir/dejar de seguir:', error)
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: 'No se pudo completar la acción',
-      })
-    } finally {
-      setIsLoadingFollow(false);
-    }
+    toggleFollow.mutate({
+      userId: user.id,
+      nextFollowing: !user.isFollowed,
+      displayName: `@${user.userName}`,
+    });
   }
 
-  if (isLoading)
-    return (
-      <View style={[styles.screen, styles.center]}>
-        <ActivityIndicator size="large" color={COLORS.white} />
-      </View>
-    )
+  if (isLoading) return <ProfileSkeleton variant="other" />
 
   if (error || !user)
     return (
@@ -122,6 +84,12 @@ export default function UserProfileScreen() {
           <MaterialIcons name="arrow-back" size={24} color={COLORS.lightBlueX2} />
         </AnimatedPressable>
         <Text style={styles.headerTitle}>{user.userName}</Text>
+        <AnimatedPressable
+          style={styles.headerAction}
+          onPress={() => shareLink(linkToUser(user.id), `Check out @${user.userName} on Musync`)}
+        >
+          <MaterialIcons name="share" size={24} color={COLORS.lightBlueX2} />
+        </AnimatedPressable>
       </View>
 
       {/* Avatar + stats */}
@@ -151,21 +119,18 @@ export default function UserProfileScreen() {
         <GenreBadges genres={user.favoriteGenres ?? []} />
 
         <View style={styles.actionRow}>
+          {/* No pending spinner any more: the label flips on tap and reverts if
+              the request fails, so a spinner would only ever flash. */}
           <TouchableOpacity
-            disabled={isLoadingFollow}
             onPress={handleFollowToggle}
             style={[
               styles.followButton,
-              isFollowed ? styles.followingButton : styles.followButtonOutline,
+              user.isFollowed ? styles.followingButton : styles.followButtonOutline,
             ]}
           >
-            {isLoadingFollow ? (
-              <ActivityIndicator color={COLORS.white} size="small" />
-            ) : (
-              <Text style={styles.followButtonText}>
-                {isFollowed ? "Following" : "Follow"}
-              </Text>
-            )}
+            <Text style={styles.followButtonText}>
+              {user.isFollowed ? "Following" : "Follow"}
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -221,6 +186,11 @@ const styles = StyleSheet.create({
   },
   arrowBack: {
     marginLeft: 8,
+  },
+  // Mirrors arrowBack's footprint so headerTitle's auto margins keep the title
+  // centred now that there is something on both sides of it.
+  headerAction: {
+    marginRight: 8,
   },
   headerTitle: {
     fontSize: 18,

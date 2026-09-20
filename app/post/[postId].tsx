@@ -3,6 +3,8 @@ import Post from "@/components/Post"
 import { COLORS } from "@/constants/Colors"
 import { usePost } from "@/hooks/usePost"
 import { ApiError } from "@/utilities/api"
+import { linkToPost } from "@/utilities/deepLinks"
+import { shareLink } from "@/utilities/share"
 import MaterialIcons from "@expo/vector-icons/MaterialIcons"
 import { router, useLocalSearchParams } from "expo-router"
 import React, { useState } from "react"
@@ -52,8 +54,13 @@ export default function PostDetailScreen() {
           <MaterialIcons name="arrow-back" size={24} color={COLORS.lightBlueX2} />
         </AnimatedPressable>
         <Text style={styles.headerTitle} numberOfLines={1}>@{post.author.userName}</Text>
-        {/* Spacer keeping the title optically centred, as on the release screen */}
-        <View style={styles.arrowBack} />
+        {/* Takes over the spacer that kept the title optically centred */}
+        <AnimatedPressable
+          style={styles.arrowBack}
+          onPress={() => shareLink(linkToPost(post.id), `A post by @${post.author.userName} on Musync`)}
+        >
+          <MaterialIcons name="share" size={22} color={COLORS.lightBlueX2} />
+        </AnimatedPressable>
       </View>
 
       <Post post={post} onDeleted={handleDeleted} />

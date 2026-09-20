@@ -8,9 +8,10 @@ type Props = {
   visible: boolean
   onClose: () => void
   onEditProfile: () => void
+  onShareProfile: () => void
 }
 
-export default function ProfileMenu({ visible, onClose, onEditProfile }: Props) {
+export default function ProfileMenu({ visible, onClose, onEditProfile, onShareProfile }: Props) {
   if (!visible) return null
 
   return (
@@ -26,6 +27,17 @@ export default function ProfileMenu({ visible, onClose, onEditProfile }: Props) 
         >
           <MaterialIcons name="edit" size={18} color={COLORS.white} />
           <Text style={styles.menuItemText}>Edit profile</Text>
+        </AnimatedPressable>
+
+        <AnimatedPressable
+          style={styles.menuItem}
+          onPress={() => {
+            onShareProfile()
+            onClose()
+          }}
+        >
+          <MaterialIcons name="share" size={18} color={COLORS.white} />
+          <Text style={styles.menuItemText}>Share profile</Text>
         </AnimatedPressable>
       </View>
     </Modal>

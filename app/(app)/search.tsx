@@ -1,16 +1,14 @@
 import FilterChips from '@/components/FilterChips'
 import FollowButton from '@/components/FollowButton'
 import { COLORS } from '@/constants/Colors'
-import { useSession } from '@/contexts/AuthContext'
+import { useToggleFollowUser } from '@/hooks/useToggleFollowUser'
 import { useGenres } from '@/hooks/useGenres'
 import { useInstruments } from '@/hooks/useInstruments'
 import { useSearchBands } from '@/hooks/useSearchBands'
 import { useSearchUsers } from '@/hooks/useSearchUsers'
-import { usersService } from '@/services/usersService'
 import { BandSearchResult } from '@/types/Band.type'
 import { UserSearchResult } from '@/types/User.type'
 import MaterialIcons from '@expo/vector-icons/MaterialIcons'
-import { InfiniteData, useQueryClient } from '@tanstack/react-query'
 import { router, useFocusEffect } from 'expo-router'
 import React, { useCallback, useEffect, useState } from 'react'
 import {
@@ -23,7 +21,6 @@ import {
   TouchableOpacity,
   View
 } from 'react-native'
-import Toast from 'react-native-toast-message'
 
 const DEFAULT_AVATAR = require('@/assets/dummyImages/avatars/avatar0.jpg')
 
@@ -32,11 +29,12 @@ type BandResultItem = BandSearchResult & { kind: 'band' }
 type ResultItem = UserResultItem | BandResultItem
 
 export default function Search() {
-  const { currentUser } = useSession()
-  const queryClient = useQueryClient()
+  // Screen level on purpose: renderUsuario is a plain function invoked from
+  // renderItem, so a hook cannot live inside it. The target comes in as a
+  // mutation variable instead.
+  const toggleFollow = useToggleFollowUser()
   const [busqueda, setBusqueda] = useState('')
   const [debouncedQuery, setDebouncedQuery] = useState('')
-  const [followingInProgress, setFollowingInProgress] = useState<number | null>(null)
   const [selectedInstrumentFilter, setSelectedInstrumentFilter] = useState<number | undefined>(undefined)
   const [selectedGenreFilter, setSelectedGenreFilter] = useState<number | undefined>(undefined)
 
@@ -77,63 +75,16 @@ export default function Search() {
     if (hasMoreBands && !loadingMoreBands) fetchNextBands()
   }
 
-  const toggleSeguir = async (usuario: UserSearchResult) => {
-    if (!currentUser) {
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: 'Debes iniciar sesión para seguir usuarios',
-      })
-      return
-    }
-
-    try {
-      setFollowingInProgress(usuario.id)
-
-      const result = usuario.siguiendo
-        ? await usersService.unfollowUser(usuario.id)
-        : await usersService.followUser(usuario.id)
-
-      Toast.show({
-        type: 'success',
-        text1: result.isFollowing ? 'Siguiendo' : 'Dejaste de seguir',
-        text2: `@${usuario.username}`,
-      })
-
-      // Actualizar el resultado cacheado de esta búsqueda (paginada) con los conteos reales del servidor
-      queryClient.setQueryData<InfiniteData<UserSearchResult[]>>(
-        ['users', 'search', debouncedQuery],
-        (old) => old ? {
-          ...old,
-          pages: old.pages.map(page => page.map(u => u.id === usuario.id
-            ? { ...u, siguiendo: result.isFollowing, followersCount: result.followersCount }
-            : u)),
-        } : old
-      )
-    } catch (error) {
-      console.error('Error al seguir/dejar de seguir:', error)
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: 'No se pudo completar la acción',
-      })
-    } finally {
-      setFollowingInProgress(null)
-    }
-  }
-
   useFocusEffect(
     useCallback(() => {
       return () => {
         setBusqueda('');
         setDebouncedQuery('');
-        setFollowingInProgress(null);
       };
     }, [])
   );
 
   const renderUsuario = (item: UserResultItem) => {
-    const isProcessing = followingInProgress === item.id
     const avatarSource = item.foto ? { uri: item.foto } : DEFAULT_AVATAR
 
     return (
@@ -146,10 +97,18 @@ export default function Search() {
           <Text style={styles.followers}>{item.followersCount} followers</Text>
         </View>
 
+        {/* Flips on tap and reverts on failure, so there is no pending state
+            to track per row any more. */}
         <FollowButton
           following={item.siguiendo}
-          loading={isProcessing}
-          onPress={() => toggleSeguir(item)}
+          loading={false}
+          onPress={() =>
+            toggleFollow.mutate({
+              userId: item.id,
+              nextFollowing: !item.siguiendo,
+              displayName: `@${item.username}`,
+            })
+          }
         />
       </TouchableOpacity>
     )

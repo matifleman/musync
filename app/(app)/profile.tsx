@@ -6,8 +6,11 @@ import Stat from "@/components/Stat"
 import UserBandsList from "@/components/UserBandsList"
 import { COLORS } from '@/constants/Colors'
 import { useSession } from '@/contexts/AuthContext'
+import { linkToUser } from '@/utilities/deepLinks'
+import { shareLink } from '@/utilities/share'
 import { useUserBands } from "@/hooks/useUserBands"
 import { useUserFollowedBandsCount } from "@/hooks/useUserFollowedBandsCount"
+import { PostsGridSkeleton } from "@/components/skeletons/ProfileSkeleton"
 import { useUserPosts } from "@/hooks/useUserPosts"
 import { usersService } from "@/services/usersService"
 import { resolveUserProfilePictureUrl } from "@/utilities/resolverServerImageUrls"
@@ -128,23 +131,30 @@ export default function ProfileScreen() {
           )
         }
 
-        {/* grid of posts */}
-        <View style={styles.postsGrid}>
-          {posts.map((item) => (
-            <TouchableOpacity
-              key={item.id}
-              onPress={() => router.push({ pathname: '/post/[postId]', params: { postId: item.id } })}
-            >
-              <Image source={{ uri: item.image }} style={styles.gridItem} />
-            </TouchableOpacity>
-          ))}
-        </View>
+        {/* grid of posts. The screen itself never waits on a query - `user` comes
+            from the session - so only this section has a loading state, and it
+            used to render as blank space. */}
+        {postsLoading ? (
+          <PostsGridSkeleton />
+        ) : (
+          <View style={styles.postsGrid}>
+            {posts.map((item) => (
+              <TouchableOpacity
+                key={item.id}
+                onPress={() => router.push({ pathname: '/post/[postId]', params: { postId: item.id } })}
+              >
+                <Image source={{ uri: item.image }} style={styles.gridItem} />
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
       </ScrollView>
 
       <ProfileMenu
         visible={isMenuVisible}
         onClose={() => setIsMenuVisible(false)}
         onEditProfile={() => router.push('/profile/edit')}
+        onShareProfile={() => shareLink(linkToUser(user.id), `Check out @${user.userName} on Musync`)}
       />
     </>
   )

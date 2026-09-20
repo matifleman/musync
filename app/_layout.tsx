@@ -1,5 +1,6 @@
 import { COLORS } from '@/constants/Colors';
 import { SessionProvider, useSession } from '@/contexts/AuthContext';
+import { useDeepLinkReplay } from '@/hooks/useDeepLinkReplay';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useFonts } from 'expo-font';
 import { SplashScreen, Stack } from 'expo-router';
@@ -33,6 +34,11 @@ function RootNavigator() {
   });
   const { currentUser, isBootstrapping } = useSession();
 
+  // Must run before the early return below: this component still mounts (and so
+  // still runs effects) while it renders null behind the splash screen, which is
+  // how a link that cold-started the app gets captured.
+  useDeepLinkReplay();
+
   // Keep the splash screen up until fonts are ready AND the launch-time silent
   // refresh has resolved, so the app never flashes sign-in before a valid
   // session is restored.
@@ -44,8 +50,19 @@ function RootNavigator() {
 
   return (
     <Stack screenOptions={{headerShown: false,}}>
+      {/* Every one of these has to be named explicitly. Stack.Protected only
+          guards screens declared as its children - a route file that is merely
+          present on disk gets auto-registered and stays reachable, which is how
+          these detail screens were previously open to signed-out callers. */}
       <Stack.Protected guard={!!currentUser}>
         <Stack.Screen name="(app)" />
+        <Stack.Screen name="user/[userId]" />
+        <Stack.Screen name="band/[bandId]" />
+        <Stack.Screen name="band/edit/[bandId]" />
+        <Stack.Screen name="release/[releaseId]" />
+        <Stack.Screen name="post/[postId]" />
+        <Stack.Screen name="list/[listType]" />
+        <Stack.Screen name="profile/edit" />
       </Stack.Protected>
       <Stack.Protected guard={!currentUser}>
         <Stack.Screen name="sign-in" />
