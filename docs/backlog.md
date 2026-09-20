@@ -134,6 +134,26 @@ Small, independent improvements. They can ship as separate small PRs alongside t
 - [ ] Opening a `musync://` link lands on the right screen (after sign-in if needed).
 - [ ] The share button produces a link that opens the app on that screen.
 
+All four are implemented but every one of them is only observable on a device or
+emulator, so none is ticked yet — they need one pass on a real build. What is
+verified: `tsc` and lint clean, the whole app bundles, and the `musync://` URL
+parser passes its cases including unknown kinds and missing ids.
+
+**Decisions taken while implementing**
+- Pages are newest-first with an `inverted` list; see feature 3's decisions.
+- Like and follow were reimplemented five times across the app; they are now three
+  shared mutation hooks (`useToggleLike`, `useToggleFollowUser`,
+  `useToggleFollowBand`) that own the optimistic patch and the rollback. The
+  per-site local mirrors and per-row pending spinners are gone.
+- Skeletons cover only the screens named above. Button and paging spinners stay.
+- Share links are `musync://` only — there is no associated domain or intent
+  filter for `https`, so a recipient without the app gets a link their OS cannot
+  open. A web fallback needs infrastructure that does not exist yet.
+- The detail routes (`user/`, `band/`, `release/`, `post/`, `list/`, both edit
+  screens) were reachable while signed out: `Stack.Protected` only guards screens
+  declared as its children, and these were merely present on disk. They are now
+  named explicitly, which is what the "after sign-in if needed" criterion needs.
+
 ---
 
 ## Phase 2 — Growth & bands
