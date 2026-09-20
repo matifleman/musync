@@ -1,19 +1,18 @@
 import { AnimatedPressable } from "@/components/AnimatedPressable"
 import FollowButton from "@/components/FollowButton"
+import { useToggleFollowBand } from "@/hooks/useToggleFollowBand"
+import { useToggleFollowUser } from "@/hooks/useToggleFollowUser"
 import { COLORS } from "@/constants/Colors"
 import { useSession } from "@/contexts/AuthContext"
 import { useBandFollowers } from "@/hooks/useBandFollowers"
 import { useUserFollowedBands } from "@/hooks/useUserFollowedBands"
 import { useUserFollowers } from "@/hooks/useUserFollowers"
 import { useUserFollowing } from "@/hooks/useUserFollowing"
-import { bandsService } from "@/services/bandsService"
-import { usersService } from "@/services/usersService"
 import { FollowedBandResult } from "@/types/Band.type"
 import { UserSearchResult } from "@/types/User.type"
 import MaterialIcons from "@expo/vector-icons/MaterialIcons"
-import { InfiniteData, useQueryClient } from "@tanstack/react-query"
 import { router, useLocalSearchParams } from "expo-router"
-import React, { useState } from "react"
+import React from "react"
 import {
   ActivityIndicator,
   FlatList,
@@ -23,7 +22,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native"
-import Toast from "react-native-toast-message"
 
 const DEFAULT_AVATAR = require('@/assets/dummyImages/avatars/avatar0.jpg')
 
@@ -52,10 +50,11 @@ export default function ListScreen() {
   }>()
   const listType = rawListType as ListType
   const { currentUser } = useSession()
-  const queryClient = useQueryClient()
+  // Screen level: the render*Row functions are plain helpers called from
+  // renderItem, so hooks can't live inside them. The target is a variable.
+  const toggleFollowUser = useToggleFollowUser()
+  const toggleFollowBand = useToggleFollowBand()
 
-  const [processingUserId, setProcessingUserId] = useState<number | null>(null)
-  const [processingBandId, setProcessingBandId] = useState<number | null>(null)
 
   const targetUserId = userId ? Number(userId) : currentUser?.id
   // Only the session user's own Bands/Followers/Following lists are interactive
@@ -82,70 +81,6 @@ export default function ListScreen() {
     if (hasNextPage && !isFetchingNextPage) fetchNextPage()
   }
 
-  const toggleUserFollow = async (item: UserSearchResult) => {
-    if (!currentUser || !targetUserId) return
-    try {
-      setProcessingUserId(item.id)
-      const result = item.siguiendo
-        ? await usersService.unfollowUser(item.id)
-        : await usersService.followUser(item.id)
-
-      Toast.show({
-        type: 'success',
-        text1: result.isFollowing ? 'Following' : "You've unfollowed",
-        text2: `@${item.username}`,
-      })
-
-      queryClient.setQueryData<InfiniteData<UserSearchResult[]>>(
-        ['users', listType, targetUserId],
-        (old) => old ? {
-          ...old,
-          pages: old.pages.map((page) => page.map((u) =>
-            u.id === item.id
-              ? { ...u, siguiendo: result.isFollowing, followersCount: result.followersCount }
-              : u
-          )),
-        } : old
-      )
-    } catch (error) {
-      console.error('Error following/unfollowing user:', error)
-      Toast.show({ type: 'error', text1: 'Error', text2: 'Could not complete the action' })
-    } finally {
-      setProcessingUserId(null)
-    }
-  }
-
-  const toggleBandFollow = async (item: FollowedBandResult) => {
-    if (!currentUser || !targetUserId) return
-    try {
-      setProcessingBandId(item.id)
-      const result = item.isFollowing
-        ? await bandsService.unfollowBand(item.id)
-        : await bandsService.followBand(item.id)
-
-      Toast.show({
-        type: 'success',
-        text1: result.isFollowing ? 'Following' : "You've unfollowed",
-        text2: item.name,
-      })
-
-      queryClient.setQueryData<InfiniteData<FollowedBandResult[]>>(
-        ['bands', 'user', targetUserId, 'followed'],
-        (old) => old ? {
-          ...old,
-          pages: old.pages.map((page) => page.map((b) =>
-            b.id === item.id ? { ...b, isFollowing: result.isFollowing } : b
-          )),
-        } : old
-      )
-    } catch (error) {
-      console.error('Error following/unfollowing band:', error)
-      Toast.show({ type: 'error', text1: 'Error', text2: 'Could not complete the action' })
-    } finally {
-      setProcessingBandId(null)
-    }
-  }
-
   const renderUserRow = ({ item }: { item: UserSearchResult }) => (
     <TouchableOpacity style={styles.row} onPress={() => router.push(`/user/${item.id}`)}>
       <Image source={item.foto ? { uri: item.foto } : DEFAULT_AVATAR} style={styles.avatar} />
@@ -156,8 +91,14 @@ export default function ListScreen() {
       {showFollowButton && (
         <FollowButton
           following={item.siguiendo}
-          loading={processingUserId === item.id}
-          onPress={() => toggleUserFollow(item)}
+          loading={false}
+          onPress={() =>
+            toggleFollowUser.mutate({
+              userId: item.id,
+              nextFollowing: !item.siguiendo,
+              displayName: `@${item.username}`,
+            })
+          }
         />
       )}
     </TouchableOpacity>
@@ -179,8 +120,14 @@ export default function ListScreen() {
       {showFollowButton && (
         <FollowButton
           following={item.isFollowing}
-          loading={processingBandId === item.id}
-          onPress={() => toggleBandFollow(item)}
+          loading={false}
+          onPress={() =>
+            toggleFollowBand.mutate({
+              bandId: item.id,
+              nextFollowing: !item.isFollowing,
+              displayName: item.name,
+            })
+          }
         />
       )}
     </TouchableOpacity>
