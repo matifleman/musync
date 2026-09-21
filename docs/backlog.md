@@ -171,9 +171,30 @@ parser passes its cases including unknown kinds and missing ids.
 - Search tab with an empty query: "Suggested musicians" and "Bands you might like" sections, each with a follow button.
 
 **Acceptance criteria**
-- [ ] Suggestions never include yourself, people you already follow, or your own bands.
+- [x] Suggestions never include yourself, people you already follow, or your own bands.
 - [ ] Following a suggestion removes it from the list.
-- [ ] A user with no genres or instruments still gets suggestions (fall back to most-followed).
+- [x] A user with no genres or instruments still gets suggestions (fall back to most-followed).
+
+The two checked boxes are properties of what the API returns and were verified against
+it: yourself, a followed user, a band you created, a band you joined and a band you
+follow are all excluded, and a tagless account gets everyone ordered by followers. The
+server side of the middle box is verified too (a followed person drops out of the next
+response), but the box is about the card leaving the screen on tap, which needs a device.
+
+**Decisions**
+- **One ordering: shared tags, then followers, then id.** People or bands that share
+  nothing still appear after the matches. A caller with no tags shares nothing with
+  anyone, so the most-followed fallback is the same query rather than a second path.
+- **Two horizontal carousels** on the Search tab with an empty query, each paging on
+  its own swipe. The Search tab's single `SectionList` can't page two lists
+  independently. The components in `components/discover/` are self-contained so the
+  onboarding flow (feature 6) can reuse them.
+- **A followed suggestion disappears on tap** and comes back with an error toast if the
+  request fails.
+- **"Your own bands" means created or joined.** Creating a band doesn't add the creator
+  to `BandMembers`, so checking membership alone would suggest a leader their own band.
+- **No new DTOs.** Users reuse `UserSearchDTO`; bands reuse `BandSearchDTO`, which gains
+  a nullable `ProfilePicture` (band search fills it too).
 
 ---
 
