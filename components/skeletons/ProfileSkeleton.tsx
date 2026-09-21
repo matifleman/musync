@@ -1,15 +1,13 @@
 import Skeleton from '@/components/Skeleton';
+import { POSTS_GRID_SPACING, usePostsGridItemSize } from '@/hooks/usePostsGridItemSize';
 import { COLORS } from '@/constants/Colors';
 import React from 'react';
-import { Dimensions, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
-// Same constants the real profile screens compute from, so the grid lines up.
-const { width } = Dimensions.get('window');
+// Same sizes the real profile screens use, so swapping in real data doesn't
+// shift anything. The grid cell size comes from usePostsGridItemSize, as there.
 const AVATAR_SIZE = 110;
 const BAND_AVATAR_SIZE = 56;
-const GRID_SPACING = 2;
-const GRID_COLUMNS = 3;
-const GRID_ITEM_SIZE = Math.floor((width - GRID_SPACING * (GRID_COLUMNS - 1)) / GRID_COLUMNS);
 const GRID_CELLS = 9;
 const BAND_AVATARS = 4;
 
@@ -17,10 +15,12 @@ const BAND_AVATARS = 4;
 // its own: the own-profile tab has its user immediately and only ever needs this
 // half.
 export function PostsGridSkeleton() {
+  const gridItemSize = usePostsGridItemSize();
+
   return (
     <View style={styles.postsGrid}>
       {Array.from({ length: GRID_CELLS }, (_, index) => (
-        <Skeleton key={index} width={GRID_ITEM_SIZE} height={GRID_ITEM_SIZE} radius={0} />
+        <Skeleton key={index} width={gridItemSize} height={gridItemSize} radius={0} />
       ))}
     </View>
   );
@@ -111,5 +111,5 @@ const styles = StyleSheet.create({
 
   bandsRow: { flexDirection: 'row', gap: 14, marginTop: 10 },
 
-  postsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: GRID_SPACING, marginTop: 16 },
+  postsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: POSTS_GRID_SPACING, marginTop: 16 },
 });

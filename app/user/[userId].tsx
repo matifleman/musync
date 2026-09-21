@@ -10,6 +10,7 @@ import { COLORS } from "@/constants/Colors"
 import { useSession } from "@/contexts/AuthContext"
 import { useUserBands } from "@/hooks/useUserBands"
 import { useUserFollowedBandsCount } from "@/hooks/useUserFollowedBandsCount"
+import { usePostsGridItemSize, POSTS_GRID_SPACING } from "@/hooks/usePostsGridItemSize"
 import { useUserPosts } from "@/hooks/useUserPosts"
 import { useToggleFollowUser } from "@/hooks/useToggleFollowUser"
 import { useUserProfile } from "@/hooks/useUserProfile"
@@ -17,7 +18,6 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons"
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router"
 import React, { useCallback } from "react"
 import {
-  Dimensions,
   Image,
   ScrollView,
   StyleSheet,
@@ -26,16 +26,13 @@ import {
   View,
 } from "react-native"
 
-const { width } = Dimensions.get("window")
 const AVATAR_SIZE = 110
-const GRID_SPACING = 2
-const GRID_COLUMNS = 3
-const GRID_ITEM_SIZE = Math.floor((width - GRID_SPACING * (GRID_COLUMNS - 1)) / GRID_COLUMNS)
 
 export default function UserProfileScreen() {
   const { userId } = useLocalSearchParams<{ userId: string }>()
   const { currentUser } = useSession()
   const toggleFollow = useToggleFollowUser()
+  const gridItemSize = usePostsGridItemSize()
 
   const { data: user, isLoading, error, refetch: refetchProfile } = useUserProfile(userId)
   const { data: posts = [], refetch: refetchPosts } = useUserPosts(userId ? Number(userId) : undefined)
@@ -152,7 +149,7 @@ export default function UserProfileScreen() {
             key={item.id}
             onPress={() => router.push({ pathname: "/post/[postId]", params: { postId: item.id } })}
           >
-            <Image source={{ uri: item.image }} style={styles.gridItem} />
+            <Image source={{ uri: item.image }} style={[styles.gridItem, { width: gridItemSize, height: gridItemSize }]} />
           </TouchableOpacity>
         ))}
       </View>
@@ -260,11 +257,9 @@ const styles = StyleSheet.create({
   postsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: GRID_SPACING,
+    gap: POSTS_GRID_SPACING,
   },
   gridItem: {
-    width: GRID_ITEM_SIZE,
-    height: GRID_ITEM_SIZE,
     backgroundColor: "#222",
   },
   errorText: {

@@ -11,6 +11,7 @@ import { shareLink } from '@/utilities/share'
 import { useUserBands } from "@/hooks/useUserBands"
 import { useUserFollowedBandsCount } from "@/hooks/useUserFollowedBandsCount"
 import { PostsGridSkeleton } from "@/components/skeletons/ProfileSkeleton"
+import { usePostsGridItemSize, POSTS_GRID_SPACING } from "@/hooks/usePostsGridItemSize"
 import { useUserPosts } from "@/hooks/useUserPosts"
 import { usersService } from "@/services/usersService"
 import { resolveUserProfilePictureUrl } from "@/utilities/resolverServerImageUrls"
@@ -20,7 +21,6 @@ import { router, useFocusEffect } from "expo-router"
 import React, { useCallback, useMemo, useState } from 'react'
 import {
   ActivityIndicator,
-  Dimensions,
   Image,
   ScrollView,
   StyleSheet,
@@ -30,14 +30,11 @@ import {
 } from 'react-native'
 
 
-const { width } = Dimensions.get('window')
 const AVATAR_SIZE = 110
-const GRID_SPACING = 2
-const GRID_COLUMNS = 3
-const GRID_ITEM_SIZE = Math.floor((width - GRID_SPACING * (GRID_COLUMNS - 1)) / GRID_COLUMNS)
 
 export default function ProfileScreen() {
   const { currentUser, updateCurrentUser } = useSession()
+  const gridItemSize = usePostsGridItemSize()
   const [isMenuVisible, setIsMenuVisible] = useState(false)
 
   // The profile's own user is always just the session's currentUser — no need
@@ -143,7 +140,7 @@ export default function ProfileScreen() {
                 key={item.id}
                 onPress={() => router.push({ pathname: '/post/[postId]', params: { postId: item.id } })}
               >
-                <Image source={{ uri: item.image }} style={styles.gridItem} />
+                <Image source={{ uri: item.image }} style={[styles.gridItem, { width: gridItemSize, height: gridItemSize }]} />
               </TouchableOpacity>
             ))}
           </View>
@@ -234,11 +231,9 @@ const styles = StyleSheet.create({
   postsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: GRID_SPACING,
+    gap: POSTS_GRID_SPACING,
   },
   gridItem: {
-    width: GRID_ITEM_SIZE,
-    height: GRID_ITEM_SIZE,
     backgroundColor: '#ddd',
   },
   errorText: {
