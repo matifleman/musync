@@ -4,5 +4,6 @@ import React from 'react'
 
 export default function Index() {
   const { currentUser } = useSession()
-  return <Redirect href={currentUser ? "/(app)" : "/sign-in"} />
+  if (!currentUser) return <Redirect href="/sign-in" />
+  return <Redirect href={currentUser.onboardingCompleted ? "/(app)" : "/onboarding"} />
 }

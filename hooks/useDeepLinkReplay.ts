@@ -30,7 +30,10 @@ export function useDeepLinkReplay() {
   }, []);
 
   useEffect(() => {
-    if (!currentUser) return;
+    // Wait for onboarding too: the app's screens are gated behind it, so replaying a link
+    // while it's still showing would land on a screen that immediately bounces back - and
+    // the link, already consumed, would be lost.
+    if (!currentUser?.onboardingCompleted) return;
 
     const path = consumePendingLink();
     if (path) router.replace(path as never);

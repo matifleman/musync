@@ -4,7 +4,7 @@ import { useSignUpMutation } from "@/hooks/useSignUpMutation";
 import { AuthResponse } from "@/types/AuthResponse.type";
 import { LoginRequest } from "@/types/LoginRequest.type";
 import { RegistrationRequest } from "@/types/RegistrationRequest.type";
-import { User } from "@/types/User.type";
+import { CurrentUser } from "@/types/User.type";
 import { useRouter } from "expo-router";
 import { createContext, use, useCallback, useEffect, useMemo, useState, type PropsWithChildren } from 'react';
 import Toast from "react-native-toast-message";
@@ -13,8 +13,10 @@ const AuthContext = createContext<{
   signIn: (loginRequest: LoginRequest) => Promise<void>;
   signUp: (registrationRequest: RegistrationRequest) => Promise<void>;
   signOut: () => void;
-  updateCurrentUser: (user: User) => void;
-  currentUser: User | null;
+  updateCurrentUser: (user: CurrentUser) => void;
+  // The signed-in account in its self-facing shape (email, onboarding state), which is
+  // what every auth response carries - not the public User shape other profiles use.
+  currentUser: CurrentUser | null;
   isBootstrapping: boolean;
 }>({
   signIn: async () => {},
@@ -43,7 +45,7 @@ function persistAuthResponse(authResponse: AuthResponse): Promise<void> {
 }
 
 export function SessionProvider({ children }: PropsWithChildren) {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [isBootstrapping, setIsBootstrapping] = useState(true);
   const loginMutation = useLoginMutation();
   const signUpMutation = useSignUpMutation();
@@ -117,7 +119,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
 
   // Guards against setting a user while signed out — only signIn/signUp may
   // establish a session; this only ever updates an already-signed-in user.
-  const updateCurrentUser = useCallback((user: User) => {
+  const updateCurrentUser = useCallback((user: CurrentUser) => {
     setCurrentUser(prev => (prev ? user : prev));
   }, []);
 

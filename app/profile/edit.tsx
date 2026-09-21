@@ -5,6 +5,7 @@ import SelectGenresModal from "@/components/SelectGenresModal";
 import SelectInstrumentsModal from "@/components/SelectInstrumentsModal";
 import { COLORS } from "@/constants/Colors";
 import { FONTS } from "@/constants/Fonts";
+import { MAX_GENRES, MAX_INSTRUMENTS } from "@/constants/Profile";
 import { useSession } from "@/contexts/AuthContext";
 import { DISCOVER_BANDS_QUERY_KEY } from "@/hooks/useDiscoverBands";
 import { DISCOVER_USERS_QUERY_KEY } from "@/hooks/useDiscoverUsers";
@@ -38,8 +39,6 @@ import Toast from "react-native-toast-message";
 import { z } from "zod";
 
 const PICTURE_SIZE = 110;
-const MAX_INSTRUMENTS = 2;
-const MAX_GENRES = 2;
 
 const profileSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
@@ -115,7 +114,7 @@ export default function EditProfileScreen() {
 
     const failedFields: string[] = [];
     let anyChange = false;
-    let latestUser: CurrentUser = currentUser as CurrentUser;
+    let latestUser: CurrentUser = currentUser;
 
     if (
       data.firstName !== currentUser.firstName ||

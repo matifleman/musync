@@ -172,14 +172,15 @@ parser passes its cases including unknown kinds and missing ids.
 
 **Acceptance criteria**
 - [x] Suggestions never include yourself, people you already follow, or your own bands.
-- [ ] Following a suggestion removes it from the list.
+- [x] Following a suggestion removes it from the list.
 - [x] A user with no genres or instruments still gets suggestions (fall back to most-followed).
 
-The two checked boxes are properties of what the API returns and were verified against
-it: yourself, a followed user, a band you created, a band you joined and a band you
-follow are all excluded, and a tagless account gets everyone ordered by followers. The
-server side of the middle box is verified too (a followed person drops out of the next
-response), but the box is about the card leaving the screen on tap, which needs a device.
+The first and last boxes were verified against the API: yourself, a followed user, a band
+you created, a band you joined and a band you follow are all excluded, and a tagless
+account gets everyone ordered by followers. The middle box was verified later in a
+headless browser on the web build: a followed card leaves the carousel on tap and stays
+gone, and when the follow request fails the card leaves, comes back, and an error toast
+appears.
 
 **Decisions**
 - **One ordering: shared tags, then followers, then id.** People or bands that share
@@ -212,12 +213,31 @@ response), but the box is about the card leaving the screen on tap, which needs 
 - Gate it in `app/_layout.tsx` based on the flag.
 
 **Acceptance criteria**
-- [ ] New users see the flow once; finishing or skipping sets the flag.
-- [ ] Signing in on another device doesn't show the flow again.
-- [ ] Choices made during onboarding show on the profile.
+- [x] New users see the flow once; finishing or skipping sets the flag.
+- [x] Signing in on another device doesn't show the flow again.
+- [x] Choices made during onboarding show on the profile.
 
-**Open questions**
-- Stored flag or derived from "has genres"? (Recommendation: stored flag. Deriving it would re-trigger onboarding for anyone who clears their genres.)
+All three were verified end to end: against the API (register, refresh and `/me` report
+the flag false for a new account; completing sets it; a fresh login reports true), and by
+driving the web build in a headless browser — sign in as a new account → onboarding →
+two instruments → two genres → suggestions ranked on them → Done → feed; a full reload
+stays on the feed; the profile shows all four tags; an existing account on a fresh
+browser goes straight to the feed. Account creation itself wasn't driven through the UI:
+the sign-up form's native date picker doesn't render on web.
+
+**Decisions**
+- **Stored flag**, not derived from having genres — deriving it would send anyone who
+  clears their genres back through the flow, and couldn't remember a skip.
+- **Existing accounts were backfilled as onboarded** by the migration; only accounts
+  registered afterwards see the flow. The column's default stays false, matching the
+  CLR default, so EF never mistakes an explicit false for "unset".
+- **Each step saves on Next**, so leaving halfway keeps what was picked, and the follow
+  step is already ranked on the tags just chosen.
+- **One shared `TagPicker`** replaces the duplicated bodies of the instrument and genre
+  modals and renders the first two steps.
+- **"Update me" endpoints now return the full current user.** They used to map a
+  partly-loaded user, so saving genres came back with no instruments and zero follower
+  counts — which the app then stored as the session user.
 
 ---
 
