@@ -1,7 +1,7 @@
 import type { components } from '@/types/api'
 import type { Defined } from '@/types/apiTypeHelpers'
 import { CurrentUser, mapUserSearchDTOToSearchResult, User, UserSearchDTO, UserSearchResult } from '@/types/User.type'
-import { apiFetch } from '@/utilities/api'
+import { apiError, apiFetch } from '@/utilities/api'
 import { resolveUserProfilePictureUrl } from '@/utilities/resolverServerImageUrls'
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL
@@ -50,6 +50,15 @@ export const usersService = {
       const errorData = await response.json().catch(() => ({}))
       throw new Error(errorData.title || errorData.message || `Failed to update profile: ${response.status}`)
     }
+    const data: CurrentUser = await response.json()
+    return resolveUserProfilePictureUrl(data)
+  },
+
+  // Finishing and skipping onboarding are the same call. Returns the full current user, so it
+  // can replace the session user as-is.
+  async completeOnboarding(): Promise<CurrentUser> {
+    const response = await apiFetch(`${API_URL}/users/me/onboarding`, { method: 'PUT' })
+    if (!response.ok) throw await apiError(response, 'Could not finish setting up your account')
     const data: CurrentUser = await response.json()
     return resolveUserProfilePictureUrl(data)
   },
