@@ -33,6 +33,10 @@ function RootNavigator() {
     'JetBrainsMono-Medium': require('@/assets/fonts/JetBrainsMono-Medium.ttf'),
   });
   const { currentUser, isBootstrapping } = useSession();
+  // A new account goes through onboarding before it can reach the app; accounts that
+  // predate the flow were backfilled as onboarded, and a second device gets the flag from
+  // the server, so neither sees it.
+  const onboarded = !!currentUser?.onboardingCompleted;
 
   // Must run before the early return below: this component still mounts (and so
   // still runs effects) while it renders null behind the splash screen, which is
@@ -54,7 +58,7 @@ function RootNavigator() {
           guards screens declared as its children - a route file that is merely
           present on disk gets auto-registered and stays reachable, which is how
           these detail screens were previously open to signed-out callers. */}
-      <Stack.Protected guard={!!currentUser}>
+      <Stack.Protected guard={!!currentUser && onboarded}>
         <Stack.Screen name="(app)" />
         <Stack.Screen name="user/[userId]" />
         <Stack.Screen name="band/[bandId]" />
@@ -63,6 +67,9 @@ function RootNavigator() {
         <Stack.Screen name="post/[postId]" />
         <Stack.Screen name="list/[listType]" />
         <Stack.Screen name="profile/edit" />
+      </Stack.Protected>
+      <Stack.Protected guard={!!currentUser && !onboarded}>
+        <Stack.Screen name="onboarding" />
       </Stack.Protected>
       <Stack.Protected guard={!currentUser}>
         <Stack.Screen name="sign-in" />
