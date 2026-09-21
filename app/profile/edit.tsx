@@ -115,7 +115,7 @@ export default function EditProfileScreen() {
 
     const failedFields: string[] = [];
     let anyChange = false;
-    let latestUser: CurrentUser = currentUser as CurrentUser;
+    let latestUser: CurrentUser = currentUser;
 
     if (
       data.firstName !== currentUser.firstName ||
