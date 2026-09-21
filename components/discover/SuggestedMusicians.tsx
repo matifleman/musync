@@ -34,7 +34,7 @@ export default function SuggestedMusicians() {
           image={user.foto ? { uri: user.foto } : DEFAULT_AVATAR}
           placeholderIcon="person"
           title={user.username}
-          subtitle={`${user.followersCount} followers`}
+          subtitle={`${user.followersCount} ${user.followersCount === 1 ? 'follower' : 'followers'}`}
           onPress={() => router.push(`/user/${user.id}`)}
           onFollow={() =>
             toggleFollow.mutate({ userId: user.id, nextFollowing: true, displayName: `@${user.username}` })
