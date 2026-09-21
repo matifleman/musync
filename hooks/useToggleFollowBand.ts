@@ -1,10 +1,12 @@
 import { useSession } from "@/contexts/AuthContext";
 import { bandsService } from "@/services/bandsService";
-import { Band, FollowedBandResult, FollowedBandsCount } from "@/types/Band.type";
+import { Band, BandSearchResult, FollowedBandResult, FollowedBandsCount } from "@/types/Band.type";
 import { tapFeedback } from "@/utilities/haptics";
+import { removeFromInfiniteList } from "@/utilities/infiniteCache";
 import { QueryKeys, cancelQueries, restoreQueries, snapshotQueries } from "@/utilities/queryCacheSnapshot";
 import { InfiniteData, QueryClient, useMutation, useQueryClient } from "@tanstack/react-query";
 import Toast from "react-native-toast-message";
+import { DISCOVER_BANDS_QUERY_KEY } from "./useDiscoverBands";
 
 type ToggleFollowBandVariables = {
   bandId: number;
@@ -16,7 +18,9 @@ type ToggleFollowBandVariables = {
 // the followed-bands *count* sit side by side under it with completely different
 // shapes, and a prefix-matched write would try to walk .pages on the count object.
 function bandFollowCacheKeys(bandId: number, currentUserId: number | undefined): QueryKeys {
-  const keys: (readonly unknown[])[] = [["bands", String(bandId)]];
+  // The discover key is safe alongside the detail key: band ids are numeric, so
+  // ["bands", String(bandId)] can never be ["bands", "discover"].
+  const keys: (readonly unknown[])[] = [["bands", String(bandId)], DISCOVER_BANDS_QUERY_KEY];
   if (currentUserId !== undefined) {
     keys.push(["bands", "user", currentUserId, "followed"]);
     keys.push(["bands", "user", currentUserId, "followed-count"]);
@@ -85,6 +89,11 @@ export function useToggleFollowBand() {
       const snapshot = snapshotQueries(queryClient, keys);
 
       patchBandFollowed(queryClient, bandId, currentUserId, nextFollowing);
+      // Same rule as for people: a followed suggestion leaves the list, and the
+      // snapshot restores it if the request fails.
+      if (nextFollowing) {
+        removeFromInfiniteList<BandSearchResult>(queryClient, DISCOVER_BANDS_QUERY_KEY, bandId);
+      }
       tapFeedback();
 
       return { snapshot };
