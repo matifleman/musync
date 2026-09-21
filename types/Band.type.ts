@@ -17,12 +17,17 @@ export type Band = Defined<Omit<components["schemas"]["BandDTO"], "profilePictur
 
 export type CreateBandCommand = Defined<components["schemas"]["CreateBandCommand"]>
 
-export type BandSearchDTO = Defined<components["schemas"]["BandSearchDTO"]>
+// profilePicture is kept nullable (Defined<> would strip it): a band may have no
+// picture yet, same as FollowedBandDTO.
+export type BandSearchDTO = Defined<Omit<components["schemas"]["BandSearchDTO"], "profilePicture">> & {
+  profilePicture: string | null
+}
 
 export interface BandSearchResult {
   id: number
   name: string
   memberCount: number
+  profilePicture: string | null
 }
 
 export function mapBandSearchDTOToSearchResult(dto: BandSearchDTO): BandSearchResult {
@@ -30,6 +35,7 @@ export function mapBandSearchDTOToSearchResult(dto: BandSearchDTO): BandSearchRe
     id: dto.id,
     name: dto.name,
     memberCount: dto.memberCount,
+    profilePicture: dto.profilePicture ? `${process.env.EXPO_PUBLIC_SERVER_URL}/${dto.profilePicture}` : null,
   }
 }
 

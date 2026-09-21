@@ -2,9 +2,11 @@ import { usersService } from "@/services/usersService";
 import { useSession } from "@/contexts/AuthContext";
 import { User, UserSearchResult } from "@/types/User.type";
 import { tapFeedback } from "@/utilities/haptics";
+import { removeFromInfiniteList } from "@/utilities/infiniteCache";
 import { QueryKeys, cancelQueries, restoreQueries, snapshotQueries } from "@/utilities/queryCacheSnapshot";
 import { InfiniteData, QueryClient, useMutation, useQueryClient } from "@tanstack/react-query";
 import Toast from "react-native-toast-message";
+import { DISCOVER_USERS_QUERY_KEY } from "./useDiscoverUsers";
 
 // Prefixes, not exact keys: the same person can be cached in several search
 // results and in more than one follower/following list at once, and every copy
@@ -65,7 +67,7 @@ export function useToggleFollowUser() {
     mutationFn: ({ userId, nextFollowing }: ToggleFollowUserVariables) =>
       nextFollowing ? usersService.followUser(userId) : usersService.unfollowUser(userId),
     onMutate: async ({ userId, nextFollowing }) => {
-      const keys: QueryKeys = [...USER_FOLLOW_CACHE_KEYS, ["users", String(userId)]];
+      const keys: QueryKeys = [...USER_FOLLOW_CACHE_KEYS, ["users", String(userId)], DISCOVER_USERS_QUERY_KEY];
       await cancelQueries(queryClient, keys);
       const snapshot = snapshotQueries(queryClient, keys);
       // My own "Following" tally lives in AuthContext state, not in the query
@@ -73,6 +75,13 @@ export function useToggleFollowUser() {
       const previousCurrentUser = currentUser;
 
       patchUserFollowed(queryClient, userId, nextFollowing);
+      // Suggestions only ever hold people you don't follow, so a follow takes the
+      // person out rather than flipping their button. The snapshot above brings the
+      // card back if the request fails. An unfollow leaves this list alone; the
+      // invalidation in onSettled lets them reappear on the next fetch.
+      if (nextFollowing) {
+        removeFromInfiniteList<UserSearchResult>(queryClient, DISCOVER_USERS_QUERY_KEY, userId);
+      }
       if (currentUser) {
         updateCurrentUser({
           ...currentUser,
@@ -103,6 +112,7 @@ export function useToggleFollowUser() {
     onSettled: (_data, _error, { userId }) => {
       for (const queryKey of USER_FOLLOW_CACHE_KEYS) queryClient.invalidateQueries({ queryKey });
       queryClient.invalidateQueries({ queryKey: ["users", String(userId)] });
+      queryClient.invalidateQueries({ queryKey: DISCOVER_USERS_QUERY_KEY });
     },
   });
 }

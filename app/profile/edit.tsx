@@ -6,6 +6,8 @@ import SelectInstrumentsModal from "@/components/SelectInstrumentsModal";
 import { COLORS } from "@/constants/Colors";
 import { FONTS } from "@/constants/Fonts";
 import { useSession } from "@/contexts/AuthContext";
+import { DISCOVER_BANDS_QUERY_KEY } from "@/hooks/useDiscoverBands";
+import { DISCOVER_USERS_QUERY_KEY } from "@/hooks/useDiscoverUsers";
 import { genresService } from "@/services/genresService";
 import { instrumentsService } from "@/services/instrumentsService";
 import { usersService } from "@/services/usersService";
@@ -13,6 +15,7 @@ import { Genre } from "@/types/Band.type";
 import { CurrentUser, Instrument } from "@/types/User.type";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQueryClient } from "@tanstack/react-query";
 import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -54,6 +57,7 @@ function sameIds(a: number[], b: number[]): boolean {
 
 export default function EditProfileScreen() {
   const { currentUser, updateCurrentUser } = useSession();
+  const queryClient = useQueryClient();
 
   const [hasInitialized, setHasInitialized] = useState(false);
   const [pictureUri, setPictureUri] = useState<string | null>(null);
@@ -135,6 +139,8 @@ export default function EditProfileScreen() {
       anyChange = true;
       try {
         latestUser = await instrumentsService.updateMyInstruments(selectedInstruments.map((i) => i.id));
+        // Instruments feed only the people ranking; bands rank on genres alone.
+        queryClient.invalidateQueries({ queryKey: DISCOVER_USERS_QUERY_KEY });
       } catch (err) {
         console.error("Error updating instruments:", err);
         failedFields.push("instruments");
@@ -145,6 +151,9 @@ export default function EditProfileScreen() {
       anyChange = true;
       try {
         latestUser = await genresService.updateMyGenres(selectedGenres.map((g) => g.id));
+        // Genres feed both rankings, so both suggestion lists are now out of date.
+        queryClient.invalidateQueries({ queryKey: DISCOVER_USERS_QUERY_KEY });
+        queryClient.invalidateQueries({ queryKey: DISCOVER_BANDS_QUERY_KEY });
       } catch (err) {
         console.error("Error updating genres:", err);
         failedFields.push("genres");

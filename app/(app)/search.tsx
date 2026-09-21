@@ -1,4 +1,6 @@
 import FilterChips from '@/components/FilterChips'
+import SuggestedBands from '@/components/discover/SuggestedBands'
+import SuggestedMusicians from '@/components/discover/SuggestedMusicians'
 import FollowButton from '@/components/FollowButton'
 import { COLORS } from '@/constants/Colors'
 import { useToggleFollowUser } from '@/hooks/useToggleFollowUser'
@@ -14,6 +16,7 @@ import React, { useCallback, useEffect, useState } from 'react'
 import {
   ActivityIndicator,
   Image,
+  ScrollView,
   SectionList,
   StyleSheet,
   Text,
@@ -163,7 +166,14 @@ export default function Search() {
         onSelect={setSelectedGenreFilter}
       />
 
-      {loading && busqueda.trim().length > 0 ? (
+      {/* Keyed on the raw input, not the debounced query, so the suggestions give
+          way the moment you start typing rather than 300ms later. */}
+      {busqueda.trim().length === 0 ? (
+        <ScrollView contentContainerStyle={styles.discoverContainer}>
+          <SuggestedMusicians />
+          <SuggestedBands />
+        </ScrollView>
+      ) : loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={COLORS.white} />
         </View>
@@ -184,9 +194,7 @@ export default function Search() {
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyText}>
-                {busqueda.trim().length > 0
-                  ? 'We haven\'t found any users or bands'
-                  : 'Search for users or bands'}
+                We haven&apos;t found any users or bands
               </Text>
             </View>
           }
@@ -217,6 +225,9 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  discoverContainer: {
+    paddingBottom: 24,
   },
   listaContainer: {
     padding: 12,
