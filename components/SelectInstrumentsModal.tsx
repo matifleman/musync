@@ -1,13 +1,13 @@
 import { COLORS } from '@/constants/Colors'
-import { instrumentsService } from '@/services/instrumentsService'
+import { useInstruments } from '@/hooks/useInstruments'
 import { Instrument } from '@/types/User.type'
 import AntDesign from '@expo/vector-icons/AntDesign'
 import { BlurView } from 'expo-blur'
-import React, { useEffect, useState } from 'react'
-import { ActivityIndicator, FlatList, Modal, StyleSheet, Text, View } from 'react-native'
-import { SvgUri } from 'react-native-svg'
-import Toast from 'react-native-toast-message'
+import React, { useState } from 'react'
+import { Modal, StyleSheet, Text, View } from 'react-native'
+import InstrumentIcon from './InstrumentIcon'
 import { AnimatedPressable } from './AnimatedPressable'
+import TagPicker from './TagPicker'
 
 type Props = {
   visible: boolean
@@ -18,8 +18,9 @@ type Props = {
 }
 
 export default function SelectInstrumentsModal({ visible, selectedIds: initialSelectedIds, maxSelected, onClose, onConfirm }: Props) {
-  const [catalog, setCatalog] = useState<Instrument[]>([])
-  const [loadingCatalog, setLoadingCatalog] = useState(false)
+  // Cached and shared with every other screen that reads this catalogue, instead of refetching
+  // on each open.
+  const { data: catalog = [], isLoading, isError } = useInstruments()
   const [selectedIds, setSelectedIds] = useState<number[]>(initialSelectedIds)
   const [prevVisible, setPrevVisible] = useState(visible)
 
@@ -32,34 +33,8 @@ export default function SelectInstrumentsModal({ visible, selectedIds: initialSe
     }
   }
 
-  useEffect(() => {
-    if (!visible) return
-
-    setLoadingCatalog(true)
-    instrumentsService
-      .getInstruments()
-      .then(setCatalog)
-      .catch((error) => {
-        console.error('Error loading instruments:', error)
-        Toast.show({
-          type: 'error',
-          text1: 'Error',
-          text2: 'Could not load instruments',
-        })
-      })
-      .finally(() => setLoadingCatalog(false))
-  }, [visible])
-
-  const toggle = (id: number) => {
-    setSelectedIds((prev) => {
-      if (prev.includes(id)) return prev.filter((x) => x !== id)
-      if (maxSelected && prev.length >= maxSelected) return prev
-      return [...prev, id]
-    })
-  }
-
   const handleConfirm = () => {
-    onConfirm(selectedIds, catalog.filter((instrument) => selectedIds.includes(instrument.id)))
+    onConfirm(selectedIds, catalog.filter((item) => selectedIds.includes(item.id)))
     onClose()
   }
 
@@ -76,30 +51,15 @@ export default function SelectInstrumentsModal({ visible, selectedIds: initialSe
           </AnimatedPressable>
         </View>
 
-        {loadingCatalog ? (
-          <ActivityIndicator size="large" color={COLORS.white} style={{ marginVertical: 20 }} />
-        ) : (
-          <FlatList
-            data={catalog}
-            keyExtractor={(item) => String(item.id)}
-            renderItem={({ item }) => {
-              const isSelected = selectedIds.includes(item.id)
-              return (
-                <AnimatedPressable
-                  style={isSelected ? [styles.row, styles.rowSelected] : styles.row}
-                  onPress={() => toggle(item.id)}
-                >
-                  <SvgUri
-                    width={20}
-                    height={20}
-                    uri={`${process.env.EXPO_PUBLIC_SERVER_URL}/${item.image}`}
-                  />
-                  <Text style={styles.rowText}>{item.name}</Text>
-                </AnimatedPressable>
-              )
-            }}
-          />
-        )}
+        <TagPicker
+          items={catalog}
+          selectedIds={selectedIds}
+          onChange={setSelectedIds}
+          maxSelected={maxSelected}
+          loading={isLoading}
+          error={isError}
+          renderIcon={(instrument) => <InstrumentIcon instrument={instrument} />}
+        />
 
         <AnimatedPressable style={styles.confirmButton} onPress={handleConfirm}>
           <Text style={styles.confirmButtonText}>Confirm</Text>
@@ -134,28 +94,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: COLORS.white,
-  },
-
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    borderWidth: 1,
-    borderColor: COLORS.gray,
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    marginBottom: 8,
-  },
-
-  rowSelected: {
-    backgroundColor: COLORS.lightBlueX2,
-    borderColor: COLORS.lightBlueX2,
-  },
-
-  rowText: {
-    color: COLORS.white,
-    fontSize: 15,
   },
 
   confirmButton: {
